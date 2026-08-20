@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ระบบคัดกรองความเสี่ยงก่อนเข้าปฏิบัติงาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EEF1F7;
+    --paper-raise:#FFFFFF;
+    --ink:#101B33;
+    --ink-soft:#4A5578;
+    --line:#D6DCEA;
+    --teal:#1D4E89;
+    --teal-deep:#0E2A52;
+    --teal-tint:#E1E9F7;
+    --amber:#B9822A;
+    --amber-tint:#FBF0DD;
+    --green:#3E8A5B;
+    --green-tint:#E4F2E8;
+    --red:#B14B3C;
+    --red-tint:#FBE7E2;
+    --shadow: 0 1px 2px rgba(14,42,82,0.08), 0 8px 24px -12px rgba(14,42,82,0.22);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 1px 1px, rgba(14,42,82,0.06) 1px, transparent 0) 0 0/22px 22px,
+      var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Thai','Sarabun',system-ui,sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:28px 20px 80px;}
+
+  /* ---------- Header ---------- */
+  .masthead{
+    display:flex;align-items:flex-end;justify-content:space-between;
+    gap:16px;padding-bottom:18px;margin-bottom:22px;
+    border-bottom:2px solid var(--teal-deep);
+  }
+  .masthead h1{
+    font-family:'Noto Serif Thai',serif;
+    font-weight:700;font-size:26px;color:var(--teal-deep);
+    margin:0 0 4px;letter-spacing:0.2px;
+  }
+  .masthead p{margin:0;color:var(--ink-soft);font-size:14px;}
+  .mast-code{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--teal);
+    background:var(--teal-tint);border:1px solid var(--line);
+    padding:5px 10px;border-radius:100px;white-space:nowrap;
+  }
+
+  /* ---------- Stepper ---------- */
+  .stepper{display:flex;gap:8px;margin-bottom:24px;}
+  .step-tab{
+    flex:1;display:flex;align-items:center;gap:10px;
+    padding:12px 14px;border-radius:10px;
+    background:var(--paper-raise);border:1px solid var(--line);
+    font-size:13.5px;color:var(--ink-soft);cursor:default;
+    transition:all .25s ease;
+  }
+  .step-tab .num{
+    width:24px;height:24px;border-radius:50%;flex:none;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;
+    background:var(--line);color:var(--ink-soft);
+  }
+  .step-tab.active{border-color:var(--teal);background:var(--teal-tint);color:var(--teal-deep);font-weight:600;}
+  .step-tab.active .num{background:var(--teal);color:#fff;}
+  .step-tab.done{color:var(--teal-deep);}
+  .step-tab.done .num{background:var(--green);color:#fff;}
+
+  /* ---------- Card ---------- */
+  .card{
+    background:var(--paper-raise);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:26px 28px;margin-bottom:18px;
+    animation:rise .35s ease both;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  .card h2{
+    font-family:'Noto Serif Thai',serif;font-size:18px;color:var(--teal-deep);
+    margin:0 0 4px;
+  }
+  .card .sub{color:var(--ink-soft);font-size:13.5px;margin:0 0 18px;}
+
+  /* ---------- Form fields ---------- */
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:6px;}
+  .field input[type=text], .field input[type=number], .field input[type=date]{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;
+    font-family:inherit;font-size:14.5px;background:#fff;color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
+
+  .match-hint{
+    margin-top:8px;padding:10px 12px;border-radius:9px;
+    background:var(--green-tint);border:1px solid #bfe0cc;
+    font-size:13px;color:#245537;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  }
+  .match-hint button{
+    border:1px solid var(--green);background:#fff;color:var(--green);
+    padding:6px 12px;border-radius:100px;font-size:12.5px;font-weight:600;cursor:pointer;
+    font-family:inherit;
+  }
+  .match-hint button:hover{background:var(--green);color:#fff;}
+
+  /* ---------- Question sections ---------- */
+  .qsection{
+    display:flex;gap:14px;padding:18px 0;border-top:1px dashed var(--line);
+  }
+  .qsection:first-of-type{border-top:none;padding-top:0;}
+  .qicon{
+    flex:none;width:38px;height:38px;border-radius:10px;
+    background:var(--teal-tint);display:flex;align-items:center;justify-content:center;
+    color:var(--teal-deep);
+  }
+  .qbody{flex:1;min-width:0;}
+  .qbody .qtitle{font-weight:600;font-size:14.5px;margin-bottom:10px;color:var(--ink);}
+  .qbody .qtitle .req{color:var(--red);margin-left:2px;}
+  .qbody .qcaption{font-size:12.5px;color:var(--ink-soft);margin:-6px 0 10px;}
+  .qsection.invalid .opts,.followup.invalid .opts{outline:1.5px solid var(--red);outline-offset:4px;border-radius:10px;}
+  .qerror{color:var(--red);font-size:12.5px;margin-top:8px;display:none;}
+  .qsection.invalid .qerror,.followup.invalid .qerror{display:block;}
+  .opt.none-opt{border-style:dashed;}
+
+  .opts{display:flex;flex-direction:column;gap:8px;}
+  .opt{
+    display:flex;align-items:center;gap:10px;padding:10px 12px;
+    border:1px solid var(--line);border-radius:9px;cursor:pointer;
+    font-size:14px;transition:all .15s ease;background:#fff;
+  }
+  .opt:hover{border-color:var(--teal);}
+  .opt input{accent-color:var(--teal);width:16px;height:16px;flex:none;}
+  .opt.checked{border-color:var(--teal);background:var(--teal-tint);font-weight:600;}
+  .opts.wrap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  @media(max-width:640px){.opts.wrap-grid{grid-template-columns:1fr;}}
+
+  .followup{
+    margin-top:12px;padding:12px 14px;border-radius:9px;
+    background:var(--paper);border:1px solid var(--line);
+    animation:rise .25s ease both;
+  }
+
+  .extra-note{
+    margin-top:6px;padding:12px 14px;border-radius:9px;
+    background:var(--amber-tint);border:1px solid #ecd3a2;color:#7a5518;font-size:13px;
+  }
+
+  /* ---------- Buttons ---------- */
+  .actions{display:flex;justify-content:space-between;gap:10px;margin-top:6px;flex-wrap:wrap;}
+  .btn{
+    font-family:inherit;font-size:14px;font-weight:600;padding:11px 20px;
+    border-radius:9px;cursor:pointer;border:1px solid transparent;
+  }
+  .btn-primary{background:var(--teal-deep);color:#fff;}
+  .btn-primary:hover{background:var(--teal);}
+  .btn-ghost{background:transparent;color:var(--ink-soft);border-color:var(--line);}
+  .btn-ghost:hover{border-color:var(--teal);color:var(--teal-deep);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* ---------- Results (requisition slip) ---------- */
+  .slip{
+    position:relative;background:var(--paper-raise);border:1px solid var(--line);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:30px 30px 24px;margin-bottom:20px;
+  }
+  .slip::before{
+    content:"";position:absolute;top:-1px;left:24px;right:24px;height:0;
+    border-top:2px dashed #C7D2CD;
+  }
+  .slip-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:6px;}
+  .slip-head h2{font-family:'Noto Serif Thai',serif;font-size:20px;color:var(--teal-deep);margin:0;}
+  .slip-meta{font-size:12.5px;color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;text-align:right;}
+  .slip-job{font-size:14.5px;color:var(--ink-soft);margin:2px 0 18px;}
+
+  .chips{display:flex;flex-direction:column;gap:9px;margin-bottom:6px;}
+  .chip{
+    font-family:'IBM Plex Sans Thai',sans-serif;font-size:13.5px;font-weight:600;
+    padding:10px 16px;border-radius:999px;color:#fff;
+    display:inline-flex;align-items:center;gap:9px;width:fit-content;max-width:100%;
+  }
+  .chip .dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.9);flex:none;}
+  .chip.g{background:var(--green);}
+  .chip.y{background:var(--amber);}
+  .chip.r{background:var(--red);}
+
+  .banner{
+    margin:16px 0;padding:13px 15px;border-radius:10px;font-size:13.5px;
+    display:flex;gap:10px;align-items:flex-start;
+  }
+  .banner.y{background:var(--amber-tint);color:#7a5518;border:1px solid #ecd3a2;}
+  .banner.r{background:var(--red-tint);color:#8a3527;border:1px solid #eab8ab;}
+  .banner svg{flex:none;margin-top:1px;}
+
+  .exam-list{list-style:none;margin:14px 0 0;padding:0;}
+  .exam-list li{
+    display:flex;align-items:center;gap:10px;padding:10px 4px;
+    border-bottom:1px solid var(--line);font-size:14px;
+  }
+  .exam-list li:last-child{border-bottom:none;}
+  .exam-list .tick{
+    flex:none;width:20px;height:20px;border-radius:50%;background:var(--green);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .exam-list .tick svg{width:12px;height:12px;stroke:#fff;}
+  .exam-head{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.03em;
+    text-transform:uppercase;color:var(--ink-soft);border-bottom:2px solid var(--teal-deep);
+    padding-bottom:6px;margin-top:16px;
+  }
+
+  .disclaimer{
+    margin-top:18px;padding:14px 16px;border-radius:10px;
+    background:var(--paper);border:1px dashed var(--line);
+    font-size:12.5px;color:var(--ink-soft);
+  }
+
+  /* ---------- Job database drawer ---------- */
+  .db-card{
+    background:var(--paper-raise);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 20px;margin-top:26px;
+  }
+  .db-card h3{
+    font-family:'Noto Serif Thai',serif;font-size:15px;margin:0 0 4px;color:var(--teal-deep);
+  }
+  .db-card p{margin:0 0 12px;font-size:12.5px;color:var(--ink-soft);}
+  .db-list{display:flex;flex-direction:column;gap:6px;}
+  .db-item{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:var(--paper);
+  }
+  .db-item .name{font-weight:600;}
+  .db-item .meta{color:var(--ink-soft);font-size:11.5px;font-family:'IBM Plex Mono',monospace;}
+  .db-item button{
+    font-family:inherit;font-size:12px;font-weight:600;color:var(--teal-deep);
+    background:#fff;border:1px solid var(--teal);border-radius:100px;padding:5px 12px;cursor:pointer;
+  }
+  .db-item button:hover{background:var(--teal);color:#fff;}
+  .db-empty{font-size:12.5px;color:var(--ink-soft);font-style:italic;}
+
+  .rule-note{
+    text-align:center;font-size:11.5px;color:var(--ink-soft);margin-top:26px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .card,.followup{animation:none;}
+  }
+
+  /* ---------- Print memo (หนังสือส่งตรวจสุขภาพก่อนเริ่มงาน) ---------- */
+  #printMemo{display:none;}
+  .memo-page{
+    font-family:'IBM Plex Sans Thai','Sarabun',sans-serif;color:#000;
+    font-size:14px;line-height:1.7;max-width:760px;margin:0 auto;padding:10px;
+  }
+  .memo-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+  .memo-seal{
+    width:52px;height:52px;border-radius:50%;background:var(--teal-deep);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-family:'Noto Serif Thai',serif;
+    font-weight:700;font-size:17px;flex:none;
+  }
+  .memo-org{font-family:'Noto Serif Thai',serif;font-weight:700;font-size:16px;line-height:1.3;}
+  .memo-no{margin:10px 0 2px;}
+  .memo-date{text-align:right;margin:-18px 0 14px;}
+  .memo-subject{margin:4px 0;}
+  .memo-subject b{display:inline-block;width:70px;}
+  .memo-body{margin:12px 0 16px;text-indent:2.2em;text-align:justify;}
+  .memo-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;align-items:start;}
+  .memo-cols h4{margin:0 0 6px;font-weight:700;}
+  .memo-list{margin:0 0 14px;}
+  .memo-item{margin:2px 0;}
+  .memo-sub{margin:2px 0 2px 20px;}
+  .memo-subsub{margin:2px 0 2px 34px;}
+  .memo-check{font-family:'IBM Plex Mono',monospace;margin-right:5px;}
+  .memo-sign-block{margin-top:26px;display:flex;justify-content:flex-end;}
+  .memo-sign{text-align:center;width:230px;}
+  .memo-sign .line{margin-bottom:6px;}
+  .memo-recipient{margin-top:34px;}
+  .memo-recipient .line{width:230px;border-bottom:1px dotted #000;margin-bottom:6px;}
+  .memo-note{margin-top:30px;font-size:12px;border-top:1px solid #000;padding-top:8px;}
+  .memo-note div{margin:2px 0;}
+  @media print{
+    @page{ size:A4; margin:14mm 16mm; }
+    body{ background:none; }
+    .wrap{ display:none !important; }
+    #printMemo{ display:block !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>ระบบคัดกรองความเสี่ยงก่อนเข้าปฏิบัติงาน</h1>
+      <p>Occupational Health Risk Screening — สำหรับฝ่ายทรัพยากรบุคคล · ต้นแบบ v0.1</p>
+    </div>
+    <div class="mast-code">RISK ENGINE · ตามตารางตรวจสุขภาพราชวิทยาลัยฯ</div>
+  </div>
+
+  <div class="stepper" id="stepper"></div>
+
+  <div id="app"></div>
+
+  <div class="db-card">
+    <h3>ฐานข้อมูลตำแหน่งงาน</h3>
+    <p>ตำแหน่งที่เคยประเมินและบันทึกไว้แล้ว — เรียกดูผลเดิมได้ทันทีโดยไม่ต้องคัดกรองซ้ำ</p>
+    <div class="db-list" id="dbList"></div>
+  </div>
+
+  <p class="rule-note">ต้นแบบสำหรับส่งต่อทีม IT พัฒนา — ตรรกะการประมวลผลทั้งหมดทำงานฝั่ง client เพื่อการสาธิต</p>
+</div>
+
+<div id="printMemo"></div>
+
+<script>
+(function(){
+
+  /* ================= RULE DEFINITIONS ================= */
+
+  const DOMAIN_META = {
+    "1.1":{label:"สัมผัสผู้ป่วยโดยตรง (ต่อเนื่อง/เป็นเวลานาน)",color:"g"},
+    "1.2":{label:"สัมผัสผู้ป่วยเป็นครั้งคราว/ระยะสั้น",color:"g"},
+    "1.3":{label:"ดูแลเด็กเล็กโดยตรง",color:"g"},
+    "2":{label:"สัมผัสเลือด/สารคัดหลั่ง",color:"g"},
+    "3":{label:"สัมผัส/ประกอบอาหาร หรือสิ่งขับถ่ายเด็ก",color:"g"},
+    "4":{label:"งานสนับสนุน — ไม่พบความเสี่ยงเฉพาะ",color:"g"},
+    "5":{label:"ขับยานพาหนะ",color:"g"},
+    "6":{label:"สัมผัสเสียงดัง",color:"y"},
+  };
+
+  // รายการตรวจตาม "หนังสือส่งตรวจสุขภาพก่อนเริ่มงาน" (แบบฟอร์มจริงที่ใช้ส่งตัวพนักงาน)
+  const BASE_EXAMS = ["ตรวจร่างกายทั่วไป","FBS","CBC","Cr","ALT","UA","CXR"];
+
+  const DOMAIN_EXAMS = {
+    "1.1":["HBsAg, Anti-HBs"],
+    "1.2":["HBsAg, Anti-HBs"],
+    "1.3":["HBsAg, Anti-HBs"],
+    "2":["HBsAg, Anti-HBs"],
+    "3":["HBsAg, Anti-HBs","Stool exam, Stool culture","Anti-HAV IgM"],
+    "4":[],
+    "5":["ตรวจสายตาและตาบอดสี"],
+    "6":["ตรวจการได้ยิน (Audiometry)"],
+  };
+
+  const UPT_EXAM = "UPT (Urine Pregnancy Test)";
+
+  const NOISE_OPTIONS = ["เครื่องจักร","เครื่องยนต์","เครื่องกำเนิดไฟฟ้า","งานก่อสร้าง","งานซักรีด","งานช่าง","งานวิศวกรรม","อื่น ๆ"];
+
+  /* ================= STATE ================= */
+
+  const state = {
+    step: 1,
+    job: {
+      employeeName:"", unit:"", title:"", duty:"",
+      assessor:"", assessorPosition:"", contactPhone:"",
+      startDate:"", date: todayISO(), memoNumber:"",
+    },
+    answers: {
+      patientContact: null,        // 'none' | 'occasional' | 'regular'
+      bloodExposure: [],           // array of selected items (or ["ไม่มี"])
+      food: null,                  // 'no' | 'yes'
+      childcare: null,             // 'no' | 'yes'
+      childcareDiaper: null,       // 'no' | 'yes'
+      driving: null,               // 'no' | 'yes'
+      drivingPatientHelp: null,    // 'no' | 'yes'
+      noise: [],                   // array (or ["ไม่มี"])
+      radiationOrChemo: null,      // 'yes' | 'no' — กรอกโดย HR เท่านั้น
+    },
+    results: null,
+    loadedFromDb: false,
+  };
+
+  function todayISO(){
+    const d = new Date();
+    return d.toISOString().slice(0,10);
+  }
+
+  const THAI_MONTHS = ["","มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  function toThaiDate(iso){
+    if(!iso) return "วันที่ ____ เดือน ______________ พ.ศ. ______";
+    const d = new Date(iso+"T00:00:00");
+    return `วันที่ ${d.getDate()} เดือน ${THAI_MONTHS[d.getMonth()+1]} พ.ศ. ${d.getFullYear()+543}`;
+  }
+
+  /* ================= RISK ENGINE ================= */
+
+  function computeResults(){
+    const a = state.answers;
+    const domains = []; // {code,label,color}
+    const add = (code) => { if(!domains.find(d=>d.code===code)) domains.push({code, ...DOMAIN_META[code]}); };
+
+    if(a.patientContact === "regular") add("1.1");
+    else if(a.patientContact === "occasional") add("1.2");
+
+    if(a.bloodExposure.length > 0) add("2");
+
+    if(a.food === "yes") add("3");
+
+    if(a.childcare === "yes"){
+      add("1.3");
+      if(a.childcareDiaper === "yes") add("3");
+    }
+
+    if(a.driving === "yes"){
+      add("5");
+      if(a.drivingPatientHelp === "yes"){
+        // helping move patients / contaminated material while driving
+        if(!domains.find(d=>d.code==="1.1")) add("1.2");
+        add("2");
+      }
+    }
+
+    if(a.noise.length > 0 && !a.noise.includes("ไม่มี")) add("6");
+
+    if(domains.length === 0) add("4");
+
+    const noiseFlag = a.noise.length > 0 && !a.noise.includes("ไม่มี");
+
+    // Build exam list, deduped — official list only
+    const examSet = new Set(BASE_EXAMS);
+    domains.forEach(d=>{
+      (DOMAIN_EXAMS[d.code]||[]).forEach(name => examSet.add(name));
+    });
+    if(a.radiationOrChemo === "yes") examSet.add(UPT_EXAM);
+
+    return {
+      domains,
+      exams: Array.from(examSet),
+      noiseFlag,
+      computedAt: new Date().toISOString(),
+    };
+  }
+
+  /* ================= RENDER: STEPPER ================= */
+
+  function renderStepper(){
+    const labels = ["ข้อมูลตำแหน่งงาน","คัดกรองความเสี่ยง","ผลลัพธ์และรายการตรวจ"];
+    const el = document.getElementById('stepper');
+    el.innerHTML = labels.map((l,i)=>{
+      const n = i+1;
+      const cls = n === state.step ? 'active' : (n < state.step ? 'done' : '');
+      return `<div class="step-tab ${cls}"><span class="num">${n < state.step ? '✓' : n}</span><span>${l}</span></div>`;
+    }).join('');
+  }
+
+  /* ================= RENDER: STEP 1 ================= */
+
+  function loadDb(){
+    return window.storage.list('jobprofile:', false)
+      .then(res => res && res.keys ? res.keys : [])
+      .catch(()=>[]);
+  }
+
+  function renderDbList(){
+    const listEl = document.getElementById('dbList');
+    loadDb().then(keys=>{
+      if(!keys.length){
+        listEl.innerHTML = `<div class="db-empty">ยังไม่มีตำแหน่งที่บันทึกไว้ — ผลการประเมินที่บันทึกจะปรากฏที่นี่</div>`;
+        return;
+      }
+      Promise.all(keys.map(k => window.storage.get(k, false).catch(()=>null))).then(items=>{
+        const valid = items.filter(Boolean).map(r => JSON.parse(r.value));
+        valid.sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||''));
+        listEl.innerHTML = valid.map((v,idx)=>`
+          <div class="db-item">
+            <div>
+              <div class="name">${escapeHtml(v.job.title || '(ไม่ระบุชื่อตำแหน่ง)')}</div>
+              <div class="meta">${escapeHtml(v.job.unit||'-')} · บันทึกเมื่อ ${formatDate(v.savedAt)}</div>
+            </div>
+            <button data-idx="${idx}">ใช้ผลนี้</button>
+          </div>
+        `).join('');
+        listEl.querySelectorAll('button').forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            const rec = valid[+btn.dataset.idx];
+            state.job = rec.job;
+            state.answers = rec.answers;
+            state.results = rec.results;
+            state.loadedFromDb = true;
+            state.step = 3;
+            renderAll();
+          });
+        });
+      });
+    });
+  }
+
+  function formatDate(iso){
+    if(!iso) return '-';
+    const d = new Date(iso);
+    return d.toLocaleDateString('th-TH', {day:'2-digit',month:'short',year:'2-digit'}) + ' ' + d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function step1Html(){
+    return `
+      <div class="card">
+        <h2>ข้อมูลตำแหน่งงาน</h2>
+        <p class="sub">กรอกข้อมูลพื้นฐานของพนักงานและตำแหน่งที่ต้องการประเมินความเสี่ยง</p>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-employeeName">ชื่อ-นามสกุลพนักงาน</label>
+            <input type="text" id="f-employeeName" placeholder="เช่น นางสาวสมหญิง ใจดี" value="${escapeHtml(state.job.employeeName)}"/>
+          </div>
+          <div class="field">
+            <label for="f-title">ตำแหน่ง</label>
+            <input type="text" id="f-title" placeholder="เช่น พนักงานขับรถพยาบาล" value="${escapeHtml(state.job.title)}"/>
+            <div id="matchHint"></div>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-unit">สังกัด / หน่วยงาน</label>
+            <input type="text" id="f-unit" placeholder="เช่น ฝ่ายการพยาบาล, ฝ่ายโภชนาการ" value="${escapeHtml(state.job.unit)}"/>
+          </div>
+          <div class="field">
+            <label for="f-startDate">วันที่เริ่มงาน</label>
+            <input type="date" id="f-startDate" value="${state.job.startDate}"/>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-duty">ลักษณะงาน / หน้าที่หลัก (โดยสังเขป)</label>
+          <input type="text" id="f-duty" placeholder="อธิบายสั้น ๆ ว่าตำแหน่งนี้ทำอะไรเป็นหลัก" value="${escapeHtml(state.job.duty)}"/>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-assessor">ผู้ส่งตรวจ</label>
+            <input type="text" id="f-assessor" placeholder="ชื่อ-นามสกุลเจ้าหน้าที่ผู้ส่งตรวจ (ใช้เป็นผู้ประสานงานด้วย)" value="${escapeHtml(state.job.assessor)}"/>
+          </div>
+          <div class="field">
+            <label for="f-assessorPosition">ตำแหน่งผู้ส่งตรวจ</label>
+            <input type="text" id="f-assessorPosition" placeholder="เช่น เจ้าหน้าที่บริหารงานทั่วไป" value="${escapeHtml(state.job.assessorPosition)}"/>
+          </div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="f-contactPhone">เบอร์ติดต่อผู้ส่งตรวจ</label>
+            <input type="text" id="f-contactPhone" placeholder="เช่น 02 576 6000 ต่อ 6724" value="${escapeHtml(state.job.contactPhone)}"/>
+          </div>
+          <div class="field">
+            <label for="f-date">วันที่ประเมิน / วันที่ออกหนังสือ</label>
+            <input type="date" id="f-date" value="${state.job.date}"/>
+          </div>
+        </div>
+        <div class="actions">
+          <span></span>
+          <button class="btn btn-primary" id="toStep2">ถัดไป: คัดกรองความเสี่ยง →</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindStep1(){
+    ['employeeName','unit','title','duty','assessor','assessorPosition','contactPhone','startDate','date'].forEach(key=>{
+      const el = document.getElementById('f-'+key);
+      el.addEventListener('input', ()=>{ state.job[key] = el.value; if(key==='title') checkMatch(el.value); });
+    });
+    document.getElementById('toStep2').addEventListener('click', ()=>{
+      state.step = 2; renderAll();
+    });
+  }
+
+  function checkMatch(title){
+    const hint = document.getElementById('matchHint');
+    if(!title || title.trim().length < 2){ hint.innerHTML=''; return; }
+    loadDb().then(keys=>{
+      Promise.all(keys.map(k=>window.storage.get(k,false).catch(()=>null))).then(items=>{
+        const valid = items.filter(Boolean).map(r=>JSON.parse(r.value));
+        const match = valid.find(v => (v.job.title||'').trim() === title.trim());
+        if(match){
+          hint.innerHTML = `พบ Risk Profile ที่เคยประเมินไว้สำหรับตำแหน่งนี้ (${formatDate(match.savedAt)})
+            <button id="useMatch" type="button">ใช้ผลเดิม</button>`;
+          document.getElementById('useMatch').addEventListener('click', ()=>{
+            state.job = match.job; state.answers = match.answers; state.results = match.results;
+            state.loadedFromDb = true; state.step = 3; renderAll();
+          });
+          hint.className = 'match-hint';
+        } else {
+          hint.innerHTML=''; hint.className='';
+        }
+      });
+    });
+  }
+
+  /* ================= RENDER: STEP 2 ================= */
+
+  function icon(name){
+    const icons = {
+      patient:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.2"/><path d="M5 21c0-4 3-6.5 7-6.5s7 2.5 7 6.5"/></svg>',
+      drop:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2.5c3.5 5 6.5 8.8 6.5 12.3a6.5 6.5 0 1 1-13 0C5.5 11.3 8.5 7.5 12 2.5Z"/></svg>',
+      food:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3v7a2 2 0 0 0 2 2v9M7 3v7M10 3v7M4 3v7M17 3c-1.7 0-3 2-3 5s1.3 5 3 5v8"/></svg>',
+      child:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="6.5" r="2.8"/><path d="M7 21c0-3.5 2.2-6 5-6s5 2.5 5 6"/></svg>',
+      car:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 16V11l2-5h12l2 5v5"/><path d="M4 16h16M7 16v2M17 16v2"/><circle cx="7.5" cy="16" r="1.3"/><circle cx="16.5" cy="16" r="1.3"/></svg>',
+      noise:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10v4h4l5 4V6l-5 4H4Z"/><path d="M16.5 9a5 5 0 0 1 0 6M19.5 6.5a9 9 0 0 1 0 11"/></svg>',
+      flag:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4M5 4h13l-3 4 3 4H5"/></svg>',
+    };
+    return icons[name]||'';
+  }
+
+  function radioGroup(name, options, current){
+    return `<div class="opts">${options.map(o=>`
+      <label class="opt ${current===o.val?'checked':''}">
+        <input type="radio" name="${name}" value="${o.val}" ${current===o.val?'checked':''}/>
+        <span>${o.label}</span>
+      </label>`).join('')}</div>`;
+  }
+
+  function checkGroup(name, options, current, noneLabel){
+    const all = noneLabel ? [...options, noneLabel] : options;
+    return `<div class="opts wrap-grid">${all.map(o=>`
+      <label class="opt ${current.includes(o)?'checked':''} ${o===noneLabel?'none-opt':''}">
+        <input type="checkbox" name="${name}" value="${o}" data-none="${o===noneLabel}" ${current.includes(o)?'checked':''}/>
+        <span>${o}</span>
+      </label>`).join('')}</div>`;
+  }
+
+  function step2Html(){
+    const a = state.answers;
+    return `
+      <div class="card">
+        <h2>คำถามคัดกรองความเสี่ยง</h2>
+        <p class="sub">ตอบตามลักษณะงานจริงของตำแหน่งนี้ — ทุกข้อต้องเลือกคำตอบ (มีตัวเลือก "ไม่มี" ให้เลือกในข้อที่ไม่เข้าเกณฑ์)</p>
+
+        <div class="qsection" id="q-patientContact">
+          <div class="qicon">${icon('patient')}</div>
+          <div class="qbody">
+            <div class="qtitle">A. ตำแหน่งนี้มีหน้าที่สัมผัส ดูแล หรือให้บริการผู้ป่วยโดยตรงหรือไม่?<span class="req">*</span></div>
+            ${radioGroup('patientContact', [
+              {val:'none', label:'ไม่เคย'},
+              {val:'occasional', label:'มีเป็นครั้งคราว / ระยะเวลาสั้น'},
+              {val:'regular', label:'มีเป็นประจำ / เป็นเวลานาน'},
+            ], a.patientContact)}
+            <div class="qerror">กรุณาเลือกคำตอบ</div>
+          </div>
+        </div>
+
+        <div class="qsection" id="q-bloodExposure">
+          <div class="qicon">${icon('drop')}</div>
+          <div class="qbody">
+            <div class="qtitle">B. ในการทำงาน มีโอกาสสัมผัสสิ่งต่อไปนี้หรือไม่?<span class="req">*</span></div>
+            <div class="qcaption">เลือกได้มากกว่า 1 ข้อ หรือเลือก "ไม่มี" หากไม่เข้าข่ายข้อใดเลย</div>
+            ${checkGroup('bloodExposure', ["เลือด","น้ำลาย","ปัสสาวะ","อุจจาระ","เสมหะ/สารคัดหลั่ง","สิ่งส่งตรวจ","ขยะหรือวัสดุปนเปื้อน","ผ้าเปื้อนผู้ป่วย","เครื่องมือ/อุปกรณ์ที่ใช้กับผู้ป่วย"], a.bloodExposure, "ไม่มี")}
+            <div class="qerror">กรุณาเลือกอย่างน้อย 1 ข้อ (หรือเลือก "ไม่มี")</div>
+          </div>
+        </div>
+
+        <div class="qsection" id="q-food">
+          <div class="qicon">${icon('food')}</div>
+          <div class="qbody">
+            <div class="qtitle">C. ตำแหน่งนี้มีหน้าที่เตรียม ประกอบ ปรุง จัดเก็บ หรือสัมผัสอาหารโดยตรงหรือไม่?<span class="req">*</span></div>
+            ${radioGroup('food', [{val:'no',label:'ไม่ใช่'},{val:'yes',label:'ใช่'}], a.food)}
+            <div class="qerror">กรุณาเลือกคำตอบ</div>
+          </div>
+        </div>
+
+        <div class="qsection" id="q-childcare">
+          <div class="qicon">${icon('child')}</div>
+          <div class="qbody">
+            <div class="qtitle">D. ตำแหน่งนี้มีหน้าที่ดูแลเด็กเล็กโดยตรงหรือไม่?<span class="req">*</span></div>
+            ${radioGroup('childcare', [{val:'no',label:'ไม่ใช่'},{val:'yes',label:'ใช่'}], a.childcare)}
+            <div class="qerror">กรุณาเลือกคำตอบ</div>
+            ${a.childcare === 'yes' ? `
+              <div class="followup" id="q-childcareDiaper">
+                <div class="qtitle" style="margin-bottom:8px;">มีหน้าที่เปลี่ยนผ้าอ้อมหรือจัดการอุจจาระ/สิ่งขับถ่ายของเด็กหรือไม่?<span class="req">*</span></div>
+                ${radioGroup('childcareDiaper', [{val:'no',label:'ไม่ใช่'},{val:'yes',label:'ใช่'}], a.childcareDiaper)}
+                <div class="qerror">กรุณาเลือกคำตอบ</div>
+              </div>` : ''}
+          </div>
+        </div>
+
+        <div class="qsection" id="q-driving">
+          <div class="qicon">${icon('car')}</div>
+          <div class="qbody">
+            <div class="qtitle">E. การขับรถหรือยานพาหนะเป็นหน้าที่หลักของตำแหน่งนี้หรือไม่?<span class="req">*</span></div>
+            ${radioGroup('driving', [{val:'no',label:'ไม่ใช่'},{val:'yes',label:'ใช่'}], a.driving)}
+            <div class="qerror">กรุณาเลือกคำตอบ</div>
+            ${a.driving === 'yes' ? `
+              <div class="followup" id="q-drivingPatientHelp">
+                <div class="qtitle" style="margin-bottom:8px;">มีหน้าที่ช่วยเคลื่อนย้ายหรือสัมผัสผู้ป่วย/สิ่งปนเปื้อนระหว่างปฏิบัติงานหรือไม่?<span class="req">*</span></div>
+                ${radioGroup('drivingPatientHelp', [{val:'no',label:'ไม่ใช่'},{val:'yes',label:'ใช่'}], a.drivingPatientHelp)}
+                <div class="qerror">กรุณาเลือกคำตอบ</div>
+              </div>` : ''}
+          </div>
+        </div>
+
+        <div class="qsection" id="q-noise">
+          <div class="qicon">${icon('noise')}</div>
+          <div class="qbody">
+            <div class="qtitle">F. ตำแหน่งนี้ต้องทำงานใกล้เครื่องจักรหรืออุปกรณ์ที่มีเสียงดังเป็นประจำหรือไม่?<span class="req">*</span></div>
+            <div class="qcaption">เลือกได้มากกว่า 1 ข้อ หรือเลือก "ไม่มี" หากไม่เข้าข่ายข้อใดเลย</div>
+            ${checkGroup('noise', NOISE_OPTIONS, a.noise, "ไม่มี")}
+            <div class="qerror">กรุณาเลือกอย่างน้อย 1 ข้อ (หรือเลือก "ไม่มี")</div>
+            ${a.noise.length > 0 && !a.noise.includes("ไม่มี") ? `<div class="extra-note">ฝ่ายอาชีวอนามัยควรตรวจสอบระดับเสียงในพื้นที่ปฏิบัติงานเพื่อยืนยันความเสี่ยง — ระบบไม่สามารถระบุระดับ dBA จากคำตอบนี้ได้โดยตรง</div>` : ''}
+          </div>
+        </div>
+
+        <div class="qsection" id="q-radiationOrChemo">
+          <div class="qicon">${icon('flag')}</div>
+          <div class="qbody">
+            <div class="qtitle">G. ตำแหน่งนี้เป็นงานสัมผัสรังสี หรืองานสารเคมีบำบัด หรือไม่?<span class="req">*</span></div>
+            <div class="qcaption">ลักษณะงานกลุ่มนี้ต้องส่งตรวจ UPT (Urine Pregnancy Test) เพิ่มเติม — กรอกโดยเจ้าหน้าที่ HR</div>
+            ${radioGroup('radiationOrChemo', [{val:'no',label:'ไม่มี'},{val:'yes',label:'มี'}], a.radiationOrChemo)}
+            <div class="qerror">กรุณาเลือกคำตอบ</div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-ghost" id="backStep1">← ย้อนกลับ</button>
+          <button class="btn btn-primary" id="toStep3">ประมวลผล →</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const REQUIRED_QUESTIONS = ['patientContact','bloodExposure','food','childcare','driving','noise','radiationOrChemo'];
+
+  function validateStep2(){
+    const a = state.answers;
+    const invalidIds = [];
+    REQUIRED_QUESTIONS.forEach(name=>{
+      const val = a[name];
+      const empty = Array.isArray(val) ? val.length === 0 : (val === null || val === undefined);
+      if(empty) invalidIds.push('q-'+name);
+    });
+    if(a.childcare === 'yes' && !a.childcareDiaper) invalidIds.push('q-childcareDiaper');
+    if(a.driving === 'yes' && !a.drivingPatientHelp) invalidIds.push('q-drivingPatientHelp');
+    return invalidIds;
+  }
+
+  function bindStep2(){
+    document.querySelectorAll('input[type=radio]').forEach(el=>{
+      el.addEventListener('change', ()=>{
+        state.answers[el.name] = el.value;
+        if(el.name === 'childcare' && el.value === 'no') state.answers.childcareDiaper = null;
+        if(el.name === 'driving' && el.value === 'no') state.answers.drivingPatientHelp = null;
+        renderStep2Only();
+      });
+    });
+    document.querySelectorAll('input[type=checkbox]').forEach(el=>{
+      el.addEventListener('change', ()=>{
+        const arr = state.answers[el.name];
+        const isNone = el.dataset.none === 'true';
+        if(el.checked && isNone){
+          arr.length = 0; arr.push(el.value);
+        } else if(el.checked && !isNone){
+          const noneIdx = arr.indexOf('ไม่มี');
+          if(noneIdx > -1) arr.splice(noneIdx,1);
+          if(arr.indexOf(el.value) === -1) arr.push(el.value);
+        } else {
+          const i = arr.indexOf(el.value);
+          if(i>-1) arr.splice(i,1);
+        }
+        renderStep2Only();
+      });
+    });
+    document.getElementById('backStep1').addEventListener('click', ()=>{ state.step=1; renderAll(); });
+    document.getElementById('toStep3').addEventListener('click', ()=>{
+      const invalidIds = validateStep2();
+      document.querySelectorAll('.qsection, .followup').forEach(el=>el.classList.remove('invalid'));
+      if(invalidIds.length){
+        invalidIds.forEach(id=>{
+          const el = document.getElementById(id);
+          if(el) el.classList.add('invalid');
+        });
+        document.getElementById(invalidIds[0]).scrollIntoView({behavior:'smooth', block:'center'});
+        return;
+      }
+      state.results = computeResults();
+      state.loadedFromDb = false;
+      state.step = 3; renderAll();
+    });
+  }
+
+  function renderStep2Only(){
+    document.getElementById('app').innerHTML = step2Html();
+    bindStep2();
+  }
+
+  /* ================= RENDER: STEP 3 ================= */
+
+  function step3Html(){
+    const r = state.results || computeResults();
+    state.results = r;
+
+    const chips = r.domains.map(d=>`
+      <span class="chip ${d.color}"><span class="dot"></span>Risk ${d.code} — ${escapeHtml(d.label)}</span>
+    `).join('');
+
+    const noiseBanner = r.noiseFlag ? `
+      <div class="banner y">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18.5A1.8 1.8 0 0 0 3.4 21h17.2a1.8 1.8 0 0 0 1.6-2.5L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z"/></svg>
+        <div><strong>Risk 6 ต้องการการยืนยัน:</strong> ฝ่ายอาชีวอนามัยควรตรวจวัดระดับเสียงในพื้นที่ปฏิบัติงานจริงก่อนยืนยันว่าเข้าเกณฑ์เฝ้าระวัง (≥ 85 dBA)</div>
+      </div>` : '';
+
+    const checkIcon = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5 10 17 19 7" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    const examItems = r.exams.map(e=>`
+      <li><span class="tick">${checkIcon}</span><span>${escapeHtml(e)}</span></li>
+    `).join('');
+
+    return `
+      <div class="slip">
+        <div class="slip-head">
+          <h2>ผลการคัดกรองตำแหน่ง</h2>
+          <div class="slip-meta">ประเมิน ${state.job.date || todayISO()}<br/>โดย ${escapeHtml(state.job.assessor||'-')}</div>
+        </div>
+        <div class="slip-job">${escapeHtml(state.job.employeeName || '(ไม่ระบุชื่อพนักงาน)')} — ${escapeHtml(state.job.title || '(ไม่ระบุตำแหน่ง)')} · ${escapeHtml(state.job.unit || '-')}${state.loadedFromDb ? ' · <em>โหลดจากฐานข้อมูลเดิม</em>' : ''}</div>
+
+        <div class="qcaption" style="margin-bottom:8px;">อยู่ในกลุ่มความเสี่ยง</div>
+        <div class="chips">${chips}</div>
+        ${noiseBanner}
+
+        <div class="exam-head">รายการตรวจสุขภาพที่แนะนำ</div>
+        <ul class="exam-list">${examItems}</ul>
+
+        <div class="disclaimer">
+          หมายเหตุ: รายการตรวจที่แสดงเป็นผลจากการคัดกรองความเสี่ยงเบื้องต้นโดยอัตโนมัติ และควรได้รับการทบทวน/รับรองโดยหน่วยอาชีวเวชศาสตร์ก่อนนำไปใช้เป็นข้อกำหนดประจำตำแหน่งอย่างเป็นทางการ
+        </div>
+      </div>
+
+      <div class="card" style="padding:20px 22px;">
+        <h2 style="font-size:15px;">ออกหนังสือส่งตรวจสุขภาพก่อนเริ่มงาน</h2>
+        <p class="sub" style="margin-bottom:12px;">กรอกเลขที่หนังสือก่อนพิมพ์ — เลขนี้มักออกโดยงานสารบรรณ/ทะเบียนหนังสือส่งในวันที่ส่งเอกสารจริง จึงแนะนำให้ขอเลขและกรอกที่นี่เป็นขั้นตอนสุดท้ายก่อนกดพิมพ์</p>
+        <div class="field" style="max-width:280px;">
+          <label for="f-memoNumber">เลขที่หนังสือ</label>
+          <input type="text" id="f-memoNumber" placeholder="เช่น บค.พนง.๖๙/๐๐๑" value="${escapeHtml(state.job.memoNumber)}"/>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" id="backStep2">← แก้ไขคำตอบ</button>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-ghost" id="printBtn">พิมพ์หนังสือส่งตรวจ</button>
+          <button class="btn btn-ghost" id="resetBtn">ประเมินตำแหน่งใหม่</button>
+          <button class="btn btn-primary" id="saveBtn">บันทึกลงฐานข้อมูลตำแหน่งงาน</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function bindStep3(){
+    document.getElementById('backStep2').addEventListener('click', ()=>{ state.step=2; renderAll(); });
+    document.getElementById('f-memoNumber').addEventListener('input', (e)=>{ state.job.memoNumber = e.target.value; });
+    document.getElementById('printBtn').addEventListener('click', ()=>{
+      document.getElementById('printMemo').innerHTML = buildMemoHtml();
+      window.print();
+    });
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      state.step = 1;
+      state.job = {
+        employeeName:"", unit:"", title:"", duty:"",
+        assessor:"", assessorPosition:"", contactPhone:"",
+        startDate:"", date: todayISO(), memoNumber:"",
+      };
+      state.answers = {patientContact:null,bloodExposure:[],food:null,childcare:null,childcareDiaper:null,driving:null,drivingPatientHelp:null,noise:[],radiationOrChemo:null};
+      state.results = null;
+      renderAll();
+    });
+    document.getElementById('saveBtn').addEventListener('click', async ()=>{
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+      const key = 'jobprofile:' + (state.job.title || 'untitled').trim().replace(/\s+/g,'_') + '_' + Date.now();
+      const record = { job: state.job, answers: state.answers, results: state.results, savedAt: new Date().toISOString() };
+      try{
+        await window.storage.set(key, JSON.stringify(record), false);
+        btn.textContent = 'บันทึกแล้ว ✓';
+        renderDbList();
+      }catch(e){
+        btn.textContent = 'บันทึกไม่สำเร็จ ลองใหม่';
+        btn.disabled = false;
+      }
+    });
+  }
+
+  /* ================= PRINT MEMO BUILDER ================= */
+
+  function memoCheck(condition){
+    return `<span class="memo-check">${condition ? '☑' : '☐'}</span>`;
+  }
+
+  function buildMemoHtml(){
+    const j = state.job;
+    const r = state.results || computeResults();
+    const has = code => !!r.domains.find(d=>d.code===code);
+    const noRisk = has('4') && r.domains.length === 1;
+
+    return `
+      <div class="memo-page">
+        <div class="memo-head">
+          <div class="memo-seal">รพ.</div>
+          <div class="memo-org">โรงพยาบาลจุฬาภรณ์</div>
+        </div>
+        <div class="memo-no">ที่ ${escapeHtml(j.memoNumber || '________________')}</div>
+        <div class="memo-date">${toThaiDate(j.date)}</div>
+
+        <div class="memo-subject"><b>เรื่อง</b> ขอส่งตัวพนักงานตรวจสุขภาพก่อนเริ่มงาน</div>
+        <div class="memo-subject"><b>เรียน</b> หัวหน้าหน่วยคลินิกประเมินความเสี่ยง</div>
+
+        <div class="memo-body">
+          งานบริหารทรัพยากรบุคคล โรงพยาบาลจุฬาภรณ์ ขอส่งตัวพนักงาน (นาย/นาง/นางสาว) ชื่อ-นามสกุล
+          <b>${escapeHtml(j.employeeName || '.......................................................')}</b>
+          ตำแหน่ง <b>${escapeHtml(j.title || '.......................................')}</b>
+          สังกัด <b>${escapeHtml(j.unit || '.......................................')}</b>
+          วันที่เริ่มงาน <b>${j.startDate ? toThaiDate(j.startDate) : '.......................................'}</b>
+          ซึ่งเป็นผู้ผ่านการคัดเลือกเพื่อบรรจุเป็นผู้ปฏิบัติงานในสังกัดโรงพยาบาลจุฬาภรณ์ มายังท่านเพื่อตรวจสุขภาพก่อนเริ่มงาน
+          โดยรายชื่อข้างต้นจะเป็นผู้รับผิดชอบค่าใช้จ่ายที่เกิดขึ้นเองทั้งหมด โรงพยาบาลจุฬาภรณ์กำหนดรายการตรวจ ดังนี้
+        </div>
+
+        <div class="memo-cols">
+          <div>
+            <h4>๑. ${memoCheck(true)} ตรวจรายการพื้นฐาน</h4>
+            <div class="memo-list">
+              <div class="memo-sub">${memoCheck(true)} ตรวจร่างกายทั่วไป (Physical Exam)</div>
+              <div class="memo-sub">${memoCheck(true)} ตรวจน้ำตาลในเลือด (FBS)</div>
+              <div class="memo-sub">${memoCheck(true)} ความสมบูรณ์เม็ดเลือด (CBC)</div>
+              <div class="memo-sub">${memoCheck(true)} การทำงานของไต (Cr)</div>
+              <div class="memo-sub">${memoCheck(true)} การทำงานของตับ (ALT)</div>
+              <div class="memo-sub">${memoCheck(true)} ตรวจปัสสาวะ (UA)</div>
+              <div class="memo-sub">${memoCheck(true)} เอกซเรย์ปอด (CXR)</div>
+            </div>
+
+            <h4>๒. ${memoCheck(noRisk)} ไม่ส่งตรวจรายการกลุ่มเสี่ยง</h4>
+            <div class="memo-list">
+              <div class="memo-sub">${memoCheck(noRisk)} อื่นๆ</div>
+            </div>
+          </div>
+
+          <div>
+            <h4>๓. ${memoCheck(!noRisk)} ส่งตรวจรายการกลุ่มเสี่ยง</h4>
+            <div class="memo-list">
+              <div class="memo-item">๓.๑ กลุ่มการสัมผัสผู้ป่วย (เลือกได้ ๑ ข้อ หากมี)</div>
+              <div class="memo-sub">(๑) ${memoCheck(has('1.1'))} เสี่ยงสูง : สัมผัสโดยตรงใกล้ชิด (เช่น แพทย์, พยาบาล, เภสัชฯ, เทคนิคการแพทย์)</div>
+              <div class="memo-subsub">${memoCheck(has('1.1'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
+              <div class="memo-sub">(๒) ${memoCheck(has('1.2'))} เสี่ยงปานกลาง : ให้บริการทั่วไป (เช่น การเงิน, เวชระเบียน)</div>
+              <div class="memo-subsub">${memoCheck(has('1.2'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
+              <div class="memo-sub">(๓) ${memoCheck(has('1.3'))} ดูแลเด็กเล็ก (เช่น ผู้ดูแลเด็ก, พี่เลี้ยงเด็ก)</div>
+              <div class="memo-subsub">${memoCheck(has('1.3'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
+
+              <div class="memo-item">๓.๒ ความเสี่ยงด้านอื่นๆ</div>
+              <div class="memo-sub">(๑) กลุ่ม : สัมผัสเลือดหรือสารคัดหลั่ง (เช่น ห้องแล็บ, พยาธิวิทยา)</div>
+              <div class="memo-subsub">${memoCheck(has('2'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
+              <div class="memo-sub">(๒) กลุ่ม : ทำงานด้านอาหารหรือสัมผัสอาหาร</div>
+              <div class="memo-subsub">${memoCheck(has('3'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
+              <div class="memo-subsub">${memoCheck(has('3'))} ตรวจอุจจาระ (Stool exam, Stool culture)</div>
+              <div class="memo-subsub">${memoCheck(has('3'))} ตรวจไวรัสตับอักเสบเอ (Anti-HAV IgM)</div>
+              <div class="memo-sub">(๓) กลุ่ม : ปฏิบัติงานขับขี่ยานพาหนะ</div>
+              <div class="memo-subsub">${memoCheck(has('5'))} ตรวจสายตาและตาบอดสี</div>
+              <div class="memo-sub">(๔) กลุ่มเสี่ยง : งานสัมผัสเสียงดัง</div>
+              <div class="memo-subsub">${memoCheck(has('6'))} ตรวจการได้ยิน (Audiometry)</div>
+              <div class="memo-sub">${memoCheck(r.exams.includes(UPT_EXAM))} UPT (Urine Pregnancy Test) — งานสัมผัสรังสี/สารเคมีบำบัด</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="memo-sign-block">
+          <div class="memo-sign">
+            <div class="line">ผู้ส่งตรวจ ${escapeHtml(j.assessor || '')}</div>
+            <div class="line">(${escapeHtml(j.assessor || '.......................................')})</div>
+            <div>ตำแหน่ง ${escapeHtml(j.assessorPosition || '.......................................')}</div>
+          </div>
+        </div>
+
+        <div class="memo-recipient">
+          <div>ผู้รับตรวจ</div>
+          <div class="line">&nbsp;</div>
+          <div>(.......................................)</div>
+        </div>
+
+        <div class="memo-note">
+          <div><b>หมายเหตุ</b>: ๑. เมื่อรับการตรวจสุขภาพและฟังผลการตรวจเรียบร้อยแล้วจะต้องนำผลการตรวจสุขภาพ พร้อมใบรับรองแพทย์และรายงานผลเอ็กซเรย์มาส่งที่งานบริหารทรัพยากรบุคคล ก่อนเข้าเริ่มงาน</div>
+          <div>๒. ผู้ประสานงาน : ${escapeHtml(j.assessor || '.......................................')} ตำแหน่ง ${escapeHtml(j.assessorPosition || '.......................................')} เบอร์ติดต่อ ${escapeHtml(j.contactPhone || '.......................................')}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* ================= MAIN RENDER ================= */
+
+  function renderAll(){
+    renderStepper();
+    const app = document.getElementById('app');
+    if(state.step === 1){ app.innerHTML = step1Html(); bindStep1(); if(state.job.title) checkMatch(state.job.title); }
+    if(state.step === 2){ app.innerHTML = step2Html(); bindStep2(); }
+    if(state.step === 3){ app.innerHTML = step3Html(); bindStep3(); }
+  }
+
+  renderAll();
+  renderDbList();
+
+})();
+</script>
+</body>
+</html>
