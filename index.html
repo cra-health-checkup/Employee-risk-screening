@@ -92,11 +92,11 @@
   /* ---------- Form fields ---------- */
   .field{margin-bottom:16px;}
   .field label{display:block;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:6px;}
-  .field input[type=text], .field input[type=number], .field input[type=date]{
+  .field input[type=text], .field input[type=number], .field input[type=date], .field select{
     width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;
     font-family:inherit;font-size:14.5px;background:#fff;color:var(--ink);
   }
-  .field input:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
+  .field input:focus, .field select:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   @media(max-width:640px){.grid2{grid-template-columns:1fr;}}
 
@@ -256,33 +256,33 @@
   #printMemo{display:none;}
   .memo-page{
     font-family:'IBM Plex Sans Thai','Sarabun',sans-serif;color:#000;
-    font-size:14px;line-height:1.7;max-width:760px;margin:0 auto;padding:10px;
+    font-size:12.5px;line-height:1.48;width:100%;margin:0;padding:0;
   }
-  .memo-head{display:flex;align-items:center;gap:12px;margin-bottom:6px;}
+  .memo-head{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
   .memo-seal{
-    width:52px;height:52px;border-radius:50%;background:var(--teal-deep);color:#fff;
+    width:42px;height:42px;border-radius:50%;background:var(--teal-deep);color:#fff;
     display:flex;align-items:center;justify-content:center;font-family:'Noto Serif Thai',serif;
-    font-weight:700;font-size:17px;flex:none;
+    font-weight:700;font-size:14px;flex:none;
   }
-  .memo-org{font-family:'Noto Serif Thai',serif;font-weight:700;font-size:16px;line-height:1.3;}
-  .memo-no{margin:10px 0 2px;}
-  .memo-date{text-align:right;margin:-18px 0 14px;}
-  .memo-subject{margin:4px 0;}
-  .memo-subject b{display:inline-block;width:70px;}
-  .memo-body{margin:12px 0 16px;text-indent:2.2em;text-align:justify;}
-  .memo-page h4{margin:14px 0 6px;font-weight:700;}
-  .memo-list{margin:0 0 6px;}
-  .memo-sub{margin:4px 0 4px 20px;}
-  .memo-check{font-family:'IBM Plex Mono',monospace;margin-right:5px;}
-  .memo-sign-block{margin-top:26px;display:flex;justify-content:flex-end;}
-  .memo-sign{text-align:center;width:230px;}
-  .memo-sign .line{margin-bottom:6px;}
-  .memo-recipient{margin-top:34px;}
-  .memo-recipient .line{width:230px;border-bottom:1px dotted #000;margin-bottom:6px;}
-  .memo-note{margin-top:30px;font-size:12px;border-top:1px solid #000;padding-top:8px;}
-  .memo-note div{margin:2px 0;}
+  .memo-org{font-family:'Noto Serif Thai',serif;font-weight:700;font-size:14.5px;line-height:1.25;}
+  .memo-no{margin:8px 0 1px;}
+  .memo-date{text-align:right;margin:-16px 0 8px;}
+  .memo-subject{margin:2px 0;}
+  .memo-subject b{display:inline-block;width:60px;}
+  .memo-body{margin:8px 0 10px;text-indent:2.2em;text-align:justify;}
+  .memo-page h4{margin:9px 0 3px;font-weight:700;font-size:1em;}
+  .memo-list{margin:0 0 3px;}
+  .memo-sub{margin:2px 0 2px 18px;}
+  .memo-check{font-family:'IBM Plex Mono',monospace;margin-right:4px;}
+  .memo-sign-block{margin-top:16px;display:flex;justify-content:flex-end;}
+  .memo-sign{text-align:center;width:210px;}
+  .memo-sign .line{margin-bottom:4px;}
+  .memo-recipient{margin-top:20px;}
+  .memo-recipient .line{width:210px;border-bottom:1px dotted #000;margin-bottom:4px;}
+  .memo-note{margin-top:16px;font-size:9.5px;line-height:1.4;color:#333;border-top:1px solid #000;padding-top:5px;}
+  .memo-note div{margin:1px 0;}
   @media print{
-    @page{ size:A4; margin:14mm 16mm; }
+    @page{ size:A4; margin:12mm 15mm; }
     body{ background:none; }
     .wrap{ display:none !important; }
     #printMemo{ display:block !important; }
@@ -331,7 +331,7 @@
     "6":{label:"สัมผัสเสียงดัง",color:"y"},
   };
 
-  // รายการตรวจตาม "หนังสือส่งตรวจสุขภาพก่อนเริ่มงาน" (แบบฟอร์มจริงที่ใช้ส่งตัวพนักงาน)
+  // รายการตรวจตาม "หนังสือส่งตรวจสุขภาพก่อนเริ่มงาน" (แบบฟอร์มจริงที่ใช้ส่งตัวผู้ปฏิบัติงานใหม่)
   const BASE_EXAMS = ["ตรวจร่างกายทั่วไป","FBS","CBC","Cr","ALT","UA","CXR"];
 
   const DOMAIN_EXAMS = {
@@ -349,12 +349,43 @@
 
   const NOISE_OPTIONS = ["เครื่องจักร","เครื่องยนต์","เครื่องกำเนิดไฟฟ้า","งานก่อสร้าง","งานซักรีด","งานช่าง","งานวิศวกรรม","อื่น ๆ"];
 
+  /* ================= STORAGE ADAPTER =================
+     window.storage เป็น API เฉพาะของสภาพแวดล้อม Claude เท่านั้น
+     เมื่อนำไฟล์นี้ไปโฮสต์เอง (เช่น GitHub Pages) จะไม่มี window.storage
+     จึงสลับไปใช้ localStorage ของเบราว์เซอร์แทนโดยอัตโนมัติ */
+  const db = (function(){
+    const hasNative = typeof window !== 'undefined' && window.storage && typeof window.storage.set === 'function';
+    if(hasNative){
+      return {
+        set:  (key, value) => window.storage.set(key, value, false),
+        get:  (key) => window.storage.get(key, false),
+        list: (prefix) => window.storage.list(prefix, false),
+      };
+    }
+    return {
+      set: async (key, value) => { localStorage.setItem(key, value); return {key, value}; },
+      get: async (key) => {
+        const value = localStorage.getItem(key);
+        if(value === null) throw new Error('not found');
+        return {key, value};
+      },
+      list: async (prefix) => {
+        const keys = [];
+        for(let i=0; i<localStorage.length; i++){
+          const k = localStorage.key(i);
+          if(k && k.indexOf(prefix) === 0) keys.push(k);
+        }
+        return {keys};
+      },
+    };
+  })();
+
   /* ================= STATE ================= */
 
   const state = {
     step: 1,
     job: {
-      employeeName:"", unit:"", title:"", duty:"",
+      titlePrefix:"", employeeName:"", unit:"", title:"", duty:"",
       assessor:"", assessorPosition:"", contactPhone:"",
       startDate:"", date: todayISO(), memoNumber:"",
       skipRiskExams: false,
@@ -450,7 +481,7 @@
   /* ================= RENDER: STEP 1 ================= */
 
   function loadDb(){
-    return window.storage.list('jobprofile:', false)
+    return db.list('jobprofile:')
       .then(res => res && res.keys ? res.keys : [])
       .catch(()=>[]);
   }
@@ -462,7 +493,7 @@
         listEl.innerHTML = `<div class="db-empty">ยังไม่มีตำแหน่งที่บันทึกไว้ — ผลการประเมินที่บันทึกจะปรากฏที่นี่</div>`;
         return;
       }
-      Promise.all(keys.map(k => window.storage.get(k, false).catch(()=>null))).then(items=>{
+      Promise.all(keys.map(k => db.get(k).catch(()=>null))).then(items=>{
         const valid = items.filter(Boolean).map(r => JSON.parse(r.value));
         valid.sort((a,b)=> (b.savedAt||'').localeCompare(a.savedAt||''));
         listEl.innerHTML = valid.map((v,idx)=>`
@@ -500,31 +531,39 @@
     return `
       <div class="card">
         <h2>ข้อมูลตำแหน่งงาน</h2>
-        <p class="sub">กรอกข้อมูลพื้นฐานของพนักงานและตำแหน่งที่ต้องการประเมินความเสี่ยง</p>
-        <div class="grid2">
-          <div class="field">
-            <label for="f-employeeName">ชื่อ-นามสกุลพนักงาน</label>
-            <input type="text" id="f-employeeName" placeholder="เช่น นางสาวสมหญิง ใจดี" value="${escapeHtml(state.job.employeeName)}"/>
+        <p class="sub">กรอกข้อมูลพื้นฐานของผู้ปฏิบัติงานใหม่และตำแหน่งที่ต้องการประเมินความเสี่ยง</p>
+        <div style="display:flex;gap:14px;">
+          <div class="field" style="width:140px;flex:none;">
+            <label for="f-titlePrefix">คำนำหน้า</label>
+            <select id="f-titlePrefix">
+              ${["","นาย","นาง","นางสาว","ไม่ระบุ"].map(p=>`<option value="${p}" ${state.job.titlePrefix===p?'selected':''}>${p===""?"— เลือก —":p}</option>`).join('')}
+            </select>
           </div>
+          <div class="field" style="flex:1;">
+            <label for="f-employeeName">ชื่อ-นามสกุลผู้ปฏิบัติงานใหม่</label>
+            <input type="text" id="f-employeeName" placeholder="เช่น สมหญิง ใจดี" value="${escapeHtml(state.job.employeeName)}"/>
+          </div>
+        </div>
+        <div class="grid2">
           <div class="field">
             <label for="f-title">ตำแหน่ง</label>
             <input type="text" id="f-title" placeholder="เช่น พนักงานขับรถพยาบาล" value="${escapeHtml(state.job.title)}"/>
             <div id="matchHint"></div>
           </div>
-        </div>
-        <div class="grid2">
           <div class="field">
             <label for="f-unit">สังกัด / หน่วยงาน</label>
             <input type="text" id="f-unit" placeholder="เช่น ฝ่ายการพยาบาล, ฝ่ายโภชนาการ" value="${escapeHtml(state.job.unit)}"/>
           </div>
+        </div>
+        <div class="grid2">
           <div class="field">
             <label for="f-startDate">วันที่เริ่มงาน</label>
             <input type="date" id="f-startDate" value="${state.job.startDate}"/>
           </div>
-        </div>
-        <div class="field">
-          <label for="f-duty">ลักษณะงาน / หน้าที่หลัก (โดยสังเขป)</label>
-          <input type="text" id="f-duty" placeholder="อธิบายสั้น ๆ ว่าตำแหน่งนี้ทำอะไรเป็นหลัก" value="${escapeHtml(state.job.duty)}"/>
+          <div class="field">
+            <label for="f-duty">ลักษณะงาน / หน้าที่หลัก (โดยสังเขป)</label>
+            <input type="text" id="f-duty" placeholder="อธิบายสั้น ๆ ว่าตำแหน่งนี้ทำอะไรเป็นหลัก" value="${escapeHtml(state.job.duty)}"/>
+          </div>
         </div>
         <div class="grid2">
           <div class="field">
@@ -555,7 +594,7 @@
   }
 
   function bindStep1(){
-    ['employeeName','unit','title','duty','assessor','assessorPosition','contactPhone','startDate','date'].forEach(key=>{
+    ['titlePrefix','employeeName','unit','title','duty','assessor','assessorPosition','contactPhone','startDate','date'].forEach(key=>{
       const el = document.getElementById('f-'+key);
       el.addEventListener('input', ()=>{ state.job[key] = el.value; if(key==='title') checkMatch(el.value); });
     });
@@ -568,7 +607,7 @@
     const hint = document.getElementById('matchHint');
     if(!title || title.trim().length < 2){ hint.innerHTML=''; return; }
     loadDb().then(keys=>{
-      Promise.all(keys.map(k=>window.storage.get(k,false).catch(()=>null))).then(items=>{
+      Promise.all(keys.map(k=>db.get(k).catch(()=>null))).then(items=>{
         const valid = items.filter(Boolean).map(r=>JSON.parse(r.value));
         const match = valid.find(v => (v.job.title||'').trim() === title.trim());
         if(match){
@@ -811,7 +850,7 @@
           <h2>ผลการคัดกรองตำแหน่ง</h2>
           <div class="slip-meta">ประเมิน ${state.job.date || todayISO()}<br/>โดย ${escapeHtml(state.job.assessor||'-')}</div>
         </div>
-        <div class="slip-job">${escapeHtml(state.job.employeeName || '(ไม่ระบุชื่อพนักงาน)')} — ${escapeHtml(state.job.title || '(ไม่ระบุตำแหน่ง)')} · ${escapeHtml(state.job.unit || '-')}${state.loadedFromDb ? ' · <em>โหลดจากฐานข้อมูลเดิม</em>' : ''}</div>
+        <div class="slip-job">${escapeHtml(state.job.employeeName || '(ไม่ระบุชื่อผู้ปฏิบัติงานใหม่)')} — ${escapeHtml(state.job.title || '(ไม่ระบุตำแหน่ง)')} · ${escapeHtml(state.job.unit || '-')}${state.loadedFromDb ? ' · <em>โหลดจากฐานข้อมูลเดิม</em>' : ''}</div>
 
         <div class="qcaption" style="margin-bottom:8px;">อยู่ในกลุ่มความเสี่ยง</div>
         <div class="chips">${chips}</div>
@@ -836,6 +875,7 @@
           <input type="checkbox" id="f-skipRiskExams" ${state.job.skipRiskExams?'checked':''}/>
           <span>ไม่ส่งตรวจรายการกลุ่มเสี่ยง แม้คำตอบจะพบความเสี่ยง (เอกสารจะไม่พิมพ์รายละเอียดรายการความเสี่ยงใด ๆ)</span>
         </label>
+        <div class="extra-note" style="margin-top:12px;">เมื่อขึ้นหน้าต่างพิมพ์ กรุณาปิดตัวเลือก "หัวกระดาษและท้ายกระดาษ" (Headers and footers) ในเบราว์เซอร์ เพื่อไม่ให้วันที่/เวลาและ URL ของเว็บไซต์ถูกแทรกในเอกสาร — ปกติอยู่ใต้ "เพิ่มเติม" หรือ "More settings" ในหน้าต่างพิมพ์</div>
       </div>
 
       <div class="actions">
@@ -858,12 +898,16 @@
     });
     document.getElementById('printBtn').addEventListener('click', ()=>{
       document.getElementById('printMemo').innerHTML = buildMemoHtml();
+      fitMemoToOnePage();
+      const originalTitle = document.title;
+      document.title = ' ';
       window.print();
+      document.title = originalTitle;
     });
     document.getElementById('resetBtn').addEventListener('click', ()=>{
       state.step = 1;
       state.job = {
-        employeeName:"", unit:"", title:"", duty:"",
+        titlePrefix:"", employeeName:"", unit:"", title:"", duty:"",
         assessor:"", assessorPosition:"", contactPhone:"",
         startDate:"", date: todayISO(), memoNumber:"",
         skipRiskExams: false,
@@ -878,7 +922,7 @@
       const key = 'jobprofile:' + (state.job.title || 'untitled').trim().replace(/\s+/g,'_') + '_' + Date.now();
       const record = { job: state.job, answers: state.answers, results: state.results, savedAt: new Date().toISOString() };
       try{
-        await window.storage.set(key, JSON.stringify(record), false);
+        await db.set(key, JSON.stringify(record));
         btn.textContent = 'บันทึกแล้ว ✓';
         renderDbList();
       }catch(e){
@@ -911,6 +955,26 @@
     return `<span class="memo-check">${condition ? '☑' : '☐'}</span>`;
   }
 
+  function fitMemoToOnePage(){
+    const container = document.getElementById('printMemo');
+    const page = container.querySelector('.memo-page');
+    if(!page) return;
+    page.style.zoom = 1;
+    const prevStyle = container.getAttribute('style');
+    // ทำให้มองเห็นชั่วคราวนอกจอเพื่อวัดความสูงจริง (ปกติซ่อนด้วย display:none)
+    container.setAttribute('style', 'display:block !important; position:fixed; left:-9999px; top:0; width:180mm;');
+    const pxPerMm = 96 / 25.4;
+    const PAGE_H_MM = 297, MARGIN_MM = 12; // ต้องตรงกับ @page ด้านบน
+    const availablePx = (PAGE_H_MM - MARGIN_MM * 2) * pxPerMm - 6; // เผื่อ buffer เล็กน้อย
+    const naturalHeight = page.scrollHeight;
+    let zoom = 1;
+    if(naturalHeight > availablePx){
+      zoom = Math.max(0.62, availablePx / naturalHeight);
+    }
+    page.style.zoom = zoom;
+    if(prevStyle === null) container.removeAttribute('style'); else container.setAttribute('style', prevStyle);
+  }
+
   function buildMemoHtml(){
     const j = state.job;
     const r = state.results || computeResults();
@@ -937,12 +1001,12 @@
         <div class="memo-no">ที่ ${escapeHtml(j.memoNumber || '________________')}</div>
         <div class="memo-date">${toThaiDate(j.date)}</div>
 
-        <div class="memo-subject"><b>เรื่อง</b> ขอส่งตัวพนักงานตรวจสุขภาพก่อนเริ่มงาน</div>
-        <div class="memo-subject"><b>เรียน</b> หัวหน้าหน่วยคลินิกประเมินความเสี่ยง</div>
+        <div class="memo-subject"><b>เรื่อง</b> ขอส่งตัวผู้ปฏิบัติงานใหม่ตรวจสุขภาพก่อนเริ่มงาน</div>
+        <div class="memo-subject"><b>เรียน</b> หัวหน้าหน่วยตรวจสุขภาพ</div>
 
         <div class="memo-body">
-          งานบริหารทรัพยากรบุคคล โรงพยาบาลจุฬาภรณ์ ขอส่งตัวพนักงาน (นาย/นาง/นางสาว) ชื่อ-นามสกุล
-          <b>${escapeHtml(j.employeeName || '.......................................................')}</b>
+          งานบริหารทรัพยากรบุคคล โรงพยาบาลจุฬาภรณ์ ขอส่งตัวผู้ปฏิบัติงานใหม่ ชื่อ-นามสกุล
+          <b>${j.titlePrefix && j.titlePrefix !== 'ไม่ระบุ' ? escapeHtml(j.titlePrefix) + ' ' : ''}${escapeHtml(j.employeeName || '.......................................................')}</b>
           ตำแหน่ง <b>${escapeHtml(j.title || '.......................................')}</b>
           สังกัด <b>${escapeHtml(j.unit || '.......................................')}</b>
           วันที่เริ่มงาน <b>${j.startDate ? toThaiDate(j.startDate) : '.......................................'}</b>
@@ -955,15 +1019,15 @@
           <div class="memo-sub">${memoCheck(true)} ตรวจร่างกายทั่วไป (Physical Exam), ตรวจน้ำตาลในเลือด (FBS), ความสมบูรณ์เม็ดเลือด (CBC), การทำงานของไต (Cr), การทำงานของตับ (ALT), ตรวจปัสสาวะ (UA), เอกซเรย์ปอด (CXR)</div>
         </div>
 
-        <h4>๒. ${memoCheck(!finalSkip)} ส่งตรวจรายการกลุ่มเสี่ยง</h4>
+        ${finalSkip ? `
+        <h4>๒. ${memoCheck(true)} ไม่ส่งตรวจรายการกลุ่มเสี่ยง</h4>
         <div class="memo-list">
-          ${finalSkip ? '' : riskLines.join('')}
-        </div>
-
-        <h4>๓. ${memoCheck(finalSkip)} ไม่ส่งตรวจรายการกลุ่มเสี่ยง</h4>
+          <div class="memo-sub">${memoCheck(true)} อื่นๆ</div>
+        </div>` : `
+        <h4>๒. ${memoCheck(true)} ส่งตรวจรายการกลุ่มเสี่ยง</h4>
         <div class="memo-list">
-          <div class="memo-sub">${memoCheck(finalSkip)} อื่นๆ</div>
-        </div>
+          ${riskLines.join('')}
+        </div>`}
 
         <div class="memo-sign-block">
           <div class="memo-sign">
