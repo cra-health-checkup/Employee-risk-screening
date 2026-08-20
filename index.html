@@ -256,30 +256,32 @@
   #printMemo{display:none;}
   .memo-page{
     font-family:'IBM Plex Sans Thai','Sarabun',sans-serif;color:#000;
-    font-size:12.5px;line-height:1.48;width:100%;margin:0;padding:0;
+    font-size:13px;line-height:1.55;width:100%;margin:0;padding:0;
+    min-height:265mm; display:flex; flex-direction:column;
   }
-  .memo-head{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .memo-head{display:flex;align-items:center;gap:14px;min-height:74px;margin-bottom:6px;}
   .memo-seal{
-    width:42px;height:42px;border-radius:50%;background:var(--teal-deep);color:#fff;
+    width:60px;height:60px;border-radius:50%;background:var(--teal-deep);color:#fff;
     display:flex;align-items:center;justify-content:center;font-family:'Noto Serif Thai',serif;
-    font-weight:700;font-size:14px;flex:none;
+    font-weight:700;font-size:16px;flex:none;
   }
-  .memo-org{font-family:'Noto Serif Thai',serif;font-weight:700;font-size:14.5px;line-height:1.25;}
-  .memo-no{margin:8px 0 1px;}
-  .memo-date{text-align:right;margin:-16px 0 8px;}
-  .memo-subject{margin:2px 0;}
-  .memo-subject b{display:inline-block;width:60px;}
-  .memo-body{margin:8px 0 10px;text-indent:2.2em;text-align:justify;}
-  .memo-page h4{margin:9px 0 3px;font-weight:700;font-size:1em;}
-  .memo-list{margin:0 0 3px;}
-  .memo-sub{margin:2px 0 2px 18px;}
-  .memo-check{font-family:'IBM Plex Mono',monospace;margin-right:4px;}
-  .memo-sign-block{margin-top:16px;display:flex;justify-content:flex-end;}
-  .memo-sign{text-align:center;width:210px;}
-  .memo-sign .line{margin-bottom:4px;}
-  .memo-recipient{margin-top:20px;}
-  .memo-recipient .line{width:210px;border-bottom:1px dotted #000;margin-bottom:4px;}
-  .memo-note{margin-top:16px;font-size:9.5px;line-height:1.4;color:#333;border-top:1px solid #000;padding-top:5px;}
+  .memo-org{font-family:'Noto Serif Thai',serif;font-weight:700;font-size:16px;line-height:1.3;}
+  .memo-no{margin:10px 0 2px;}
+  .memo-date{text-align:right;margin:-18px 0 12px;}
+  .memo-subject{margin:3px 0;}
+  .memo-subject b{display:inline-block;width:62px;}
+  .memo-body{margin:10px 0 14px;text-indent:2.2em;text-align:justify;}
+  .memo-page h4{margin:12px 0 5px;font-weight:700;font-size:1em;}
+  .memo-list{margin:0 0 4px;}
+  .memo-sub{margin:3px 0 3px 18px;}
+  .memo-check{font-family:'IBM Plex Mono',monospace;margin-right:5px;}
+  .memo-spacer{flex:1 1 auto;min-height:10px;}
+  .memo-sign-block{margin-top:0;display:flex;justify-content:flex-end;}
+  .memo-sign{text-align:center;width:220px;}
+  .memo-sign .line{margin-bottom:5px;}
+  .memo-recipient{margin-top:26px;}
+  .memo-recipient .line{width:220px;border-bottom:1px dotted #000;margin-bottom:5px;}
+  .memo-note{margin-top:20px;font-size:11px;line-height:1.5;color:#333;border-top:1px solid #000;padding-top:6px;}
   .memo-note div{margin:1px 0;}
   @media print{
     @page{ size:A4; margin:12mm 15mm; }
@@ -898,7 +900,6 @@
     });
     document.getElementById('printBtn').addEventListener('click', ()=>{
       document.getElementById('printMemo').innerHTML = buildMemoHtml();
-      fitMemoToOnePage();
       const originalTitle = document.title;
       document.title = ' ';
       window.print();
@@ -935,13 +936,13 @@
   /* ================= PRINT MEMO BUILDER ================= */
 
   const DOMAIN_PRINT_LABEL = {
-    "1.1":"กลุ่มการสัมผัสผู้ป่วย — เสี่ยงสูง : สัมผัสโดยตรงใกล้ชิด (เช่น แพทย์, พยาบาล, เภสัชฯ, เทคนิคการแพทย์)",
-    "1.2":"กลุ่มการสัมผัสผู้ป่วย — เสี่ยงปานกลาง : ให้บริการทั่วไป (เช่น การเงิน, เวชระเบียน)",
-    "1.3":"กลุ่มการสัมผัสผู้ป่วย — ดูแลเด็กเล็ก (เช่น ผู้ดูแลเด็ก, พี่เลี้ยงเด็ก)",
-    "2":"กลุ่มสัมผัสเลือดหรือสารคัดหลั่ง (เช่น ห้องแล็บ, พยาธิวิทยา)",
-    "3":"กลุ่มทำงานด้านอาหารหรือสัมผัสอาหาร",
-    "5":"กลุ่มปฏิบัติงานขับขี่ยานพาหนะ",
-    "6":"กลุ่มเสี่ยงงานสัมผัสเสียงดัง",
+    "1.1":"เสี่ยงสูง : สัมผัสผู้ป่วยโดยตรงใกล้ชิด (เช่น แพทย์, พยาบาล, เภสัชฯ, เทคนิคการแพทย์)",
+    "1.2":"เสี่ยงปานกลาง : ให้บริการผู้ป่วยทั่วไป (เช่น การเงิน, เวชระเบียน)",
+    "1.3":"ดูแลเด็กเล็ก (เช่น ผู้ดูแลเด็ก, พี่เลี้ยงเด็ก)",
+    "2":"สัมผัสเลือดหรือสารคัดหลั่ง (เช่น ห้องแล็บ, พยาธิวิทยา)",
+    "3":"ทำงานด้านอาหารหรือสัมผัสอาหาร",
+    "5":"ปฏิบัติงานขับขี่ยานพาหนะ",
+    "6":"งานสัมผัสเสียงดัง",
   };
   const PRINT_EXAM_LABELS = {
     "HBsAg, Anti-HBs":"ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)",
@@ -950,29 +951,18 @@
     "ตรวจสายตาและตาบอดสี":"ตรวจสายตาและตาบอดสี",
     "ตรวจการได้ยิน (Audiometry)":"ตรวจการได้ยิน (Audiometry)",
   };
+  const BASE_EXAM_PRINT_LABELS = [
+    "ตรวจร่างกายทั่วไป (Physical Exam)",
+    "ตรวจน้ำตาลในเลือด (FBS)",
+    "ความสมบูรณ์เม็ดเลือด (CBC)",
+    "การทำงานของไต (Cr)",
+    "การทำงานของตับ (ALT)",
+    "ตรวจปัสสาวะ (UA)",
+    "เอกซเรย์ปอด (CXR)",
+  ];
 
   function memoCheck(condition){
     return `<span class="memo-check">${condition ? '☑' : '☐'}</span>`;
-  }
-
-  function fitMemoToOnePage(){
-    const container = document.getElementById('printMemo');
-    const page = container.querySelector('.memo-page');
-    if(!page) return;
-    page.style.zoom = 1;
-    const prevStyle = container.getAttribute('style');
-    // ทำให้มองเห็นชั่วคราวนอกจอเพื่อวัดความสูงจริง (ปกติซ่อนด้วย display:none)
-    container.setAttribute('style', 'display:block !important; position:fixed; left:-9999px; top:0; width:180mm;');
-    const pxPerMm = 96 / 25.4;
-    const PAGE_H_MM = 297, MARGIN_MM = 12; // ต้องตรงกับ @page ด้านบน
-    const availablePx = (PAGE_H_MM - MARGIN_MM * 2) * pxPerMm - 6; // เผื่อ buffer เล็กน้อย
-    const naturalHeight = page.scrollHeight;
-    let zoom = 1;
-    if(naturalHeight > availablePx){
-      zoom = Math.max(0.62, availablePx / naturalHeight);
-    }
-    page.style.zoom = zoom;
-    if(prevStyle === null) container.removeAttribute('style'); else container.setAttribute('style', prevStyle);
   }
 
   function buildMemoHtml(){
@@ -985,12 +975,16 @@
     const riskLines = r.domains
       .filter(d => d.code !== '4' && DOMAIN_PRINT_LABEL[d.code])
       .map(d=>{
-        const examNames = (DOMAIN_EXAMS[d.code]||[]).map(e => PRINT_EXAM_LABELS[e] || e).join('、 ');
-        return `<div class="memo-sub">${memoCheck(true)} ${DOMAIN_PRINT_LABEL[d.code]}<br><span style="margin-left:26px;color:#333;">→ ${examNames}</span></div>`;
+        const examNames = (DOMAIN_EXAMS[d.code]||[]).map(e => PRINT_EXAM_LABELS[e] || e).join(', ');
+        return `<div class="memo-sub">${memoCheck(true)} ${DOMAIN_PRINT_LABEL[d.code]} — ${examNames}</div>`;
       });
     if(j.radiationOrChemo === 'yes'){
-      riskLines.push(`<div class="memo-sub">${memoCheck(true)} งานสัมผัสรังสี หรืองานสารเคมีบำบัด<br><span style="margin-left:26px;color:#333;">→ UPT (Urine Pregnancy Test)</span></div>`);
+      riskLines.push(`<div class="memo-sub">${memoCheck(true)} งานสัมผัสรังสี หรืองานสารเคมีบำบัด — UPT (Urine Pregnancy Test)</div>`);
     }
+
+    const baseLines = BASE_EXAM_PRINT_LABELS.map(name =>
+      `<div class="memo-sub">${memoCheck(true)} ${name}</div>`
+    ).join('');
 
     return `
       <div class="memo-page">
@@ -1016,7 +1010,7 @@
 
         <h4>๑. ${memoCheck(true)} ตรวจรายการพื้นฐาน</h4>
         <div class="memo-list">
-          <div class="memo-sub">${memoCheck(true)} ตรวจร่างกายทั่วไป (Physical Exam), ตรวจน้ำตาลในเลือด (FBS), ความสมบูรณ์เม็ดเลือด (CBC), การทำงานของไต (Cr), การทำงานของตับ (ALT), ตรวจปัสสาวะ (UA), เอกซเรย์ปอด (CXR)</div>
+          ${baseLines}
         </div>
 
         ${finalSkip ? `
@@ -1028,6 +1022,8 @@
         <div class="memo-list">
           ${riskLines.join('')}
         </div>`}
+
+        <div class="memo-spacer"></div>
 
         <div class="memo-sign-block">
           <div class="memo-sign">
