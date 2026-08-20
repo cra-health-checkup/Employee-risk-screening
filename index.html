@@ -276,14 +276,15 @@
   .memo-list{margin:0 0 4px;}
   .memo-sub{margin:4px 0 4px 18px;}
   .memo-check{font-family:'IBM Plex Mono',monospace;margin-right:5px;}
-  .memo-sign-block{margin-top:22px;display:flex;justify-content:flex-end;}
-  .memo-sign{text-align:center;width:230px;}
-  .memo-sign .line{margin-bottom:6px;}
-  .memo-recipient{margin-top:26px;}
-  .memo-recipient .line{border-bottom:1px dotted #000;margin-bottom:6px;display:inline-block;}
-  .memo-recipient .line.sig{width:160px;}
-  .memo-recipient .name-row{display:flex;align-items:flex-end;gap:2px;}
-  .memo-recipient .name-row .line{width:340px;margin-bottom:6px;}
+  .memo-footer{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;align-items:start;margin-top:24px;}
+  .memo-footer .line{border-bottom:1px dotted #000;margin-bottom:6px;display:inline-block;}
+  .memo-footer .line.sig{width:170px;}
+  .memo-footer .name-row{display:flex;align-items:flex-end;gap:2px;}
+  .memo-footer .name-row .line{width:250px;margin-bottom:6px;}
+  .memo-footer-left .block + .block{margin-top:20px;}
+  .memo-box{border:1px solid #000;padding:12px 16px;}
+  .memo-box .box-title{font-weight:700;text-decoration:underline;margin:0 0 10px;}
+  .memo-box .box-note{margin:8px 0;}
   .memo-note{margin-top:22px;font-size:13px;line-height:1.6;color:#333;border-top:1px solid #000;padding-top:8px;}
   .memo-note div{margin:2px 0;}
   @media print{
@@ -1040,18 +1041,29 @@
           </div>
         </div>
 
-        <div class="memo-sign-block">
-          <div class="memo-sign">
+        <div class="memo-footer">
+          <div class="memo-footer-left">
+            <div class="block">
+              <div class="line">ผู้ส่งตรวจ ${escapeHtml(j.assessor || '')}</div>
+              <div class="line">(${escapeHtml(j.assessor || '.......................................')})</div>
+              <div>ตำแหน่ง ${escapeHtml(j.assessorPosition || '.......................................')}</div>
+            </div>
+            <div class="block">
+              <div>ผู้รับตรวจ</div>
+              <div class="line sig">&nbsp;</div>
+              <div class="name-row">(<span class="line">&nbsp;</span>)</div>
+            </div>
+          </div>
+
+          <div class="memo-box">
+            <div class="box-title">กรณีส่งผลเอกสารผลตรวจสุขภาพ</div>
             <div class="line">ผู้ส่งตรวจ ${escapeHtml(j.assessor || '')}</div>
             <div class="line">(${escapeHtml(j.assessor || '.......................................')})</div>
-            <div>ตำแหน่ง ${escapeHtml(j.assessorPosition || '.......................................')}</div>
+            <div class="box-note">ได้รับเอกสารผลการตรวจสุขภาพก่อนเข้าปฏิบัติงาน รับคืนเอกสารเรียบร้อยแล้ว</div>
+            <div>ผู้รับตรวจ</div>
+            <div class="line sig">&nbsp;</div>
+            <div class="name-row">(<span class="line">&nbsp;</span>)</div>
           </div>
-        </div>
-
-        <div class="memo-recipient">
-          <div>ผู้รับตรวจ</div>
-          <div class="line sig">&nbsp;</div>
-          <div class="name-row">(<span class="line">&nbsp;</span>)</div>
         </div>
 
         <div class="memo-note">
