@@ -258,8 +258,8 @@
     font-family:'IBM Plex Sans Thai','Sarabun',sans-serif;color:#000;
     font-size:14.5px;line-height:1.62;width:100%;margin:0;padding:0;
   }
-  .memo-head{display:flex;align-items:center;gap:14px;min-height:88px;margin-bottom:6px;}
-  .memo-logo{height:88px;width:auto;flex:none;}
+  .memo-head{display:flex;align-items:center;gap:14px;min-height:130px;margin-bottom:6px;}
+  .memo-logo{height:130px;width:auto;flex:none;}
   .memo-no{margin:10px 0 2px;}
   .memo-date{text-align:right;margin:-18px 0 12px;}
   .memo-subject{margin:3px 0;}
@@ -275,6 +275,7 @@
   .memo-footer-left .block + .block{margin-top:22px;}
   .sig-block{margin-top:16px;}
   .sig-line{display:flex;align-items:flex-end;gap:4px;margin-bottom:5px;}
+  .sig-line .ghost{visibility:hidden;flex:none;}
   .sig-line .line{border-bottom:1px dotted #000;flex:1 1 auto;min-width:16px;}
   .memo-box{border:1px solid #000;padding:12px 16px;}
   .memo-box .box-title{font-weight:700;text-decoration:underline;margin:0 0 6px;}
@@ -978,7 +979,7 @@
       : `<span class="line">&nbsp;</span>`;
     return `<div class="sig-block">
       <div class="sig-line"><span>${label}</span><span class="line">&nbsp;</span></div>
-      <div class="sig-line"><span>(</span>${parenInner}<span>)</span></div>
+      <div class="sig-line"><span class="ghost">${label}</span><span>(</span>${parenInner}<span>)</span></div>
     </div>`;
   }
 
@@ -1013,7 +1014,7 @@
 
     const labSet = new Set();
     r.domains.forEach(d => (DOMAIN_EXAMS[d.code]||[]).forEach(e => labSet.add(PRINT_EXAM_LABELS[e] || e)));
-    if(j.radiationOrChemo === 'yes') labSet.add('UPT (Urine Pregnancy Test)');
+    if(r.exams.includes(UPT_EXAM)) labSet.add(UPT_EXAM);
     const labLines = Array.from(labSet).map(name => `<div class="memo-sub">${memoCheck(true)} ${name}</div>`).join('');
 
     const baseLines = BASE_EXAM_PRINT_LABELS.map(name =>
