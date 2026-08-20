@@ -434,7 +434,7 @@
     if(a.patientContact === "regular") add("1.1");
     else if(a.patientContact === "occasional") add("1.2");
 
-    if(a.bloodExposure.length > 0) add("2");
+    if(a.bloodExposure.length > 0 && !a.bloodExposure.includes("ไม่มี")) add("2");
 
     if(a.food === "yes") add("3");
 
@@ -973,13 +973,18 @@
 
   // บรรทัดเซ็นชื่อ: บรรทัดแรกเว้นว่างไว้ให้เซ็นด้วยปากกาเท่านั้น
   // บรรทัดสองแสดงชื่อที่พิมพ์ไว้ในวงเล็บ (ถ้ามี) — ใช้ซ้ำทั้ง ผู้ส่งตรวจ/ผู้รับตรวจ ทั้งฝั่งซ้ายและในกรอบ
-  function sigBlock(label, name){
+  // position (ถ้ามี) จะแสดงบรรทัดที่ 3 โดยเยื้องให้ตรงกับจุดเริ่มวงเล็บ
+  function sigBlock(label, name, position){
     const parenInner = name
       ? `<span>${escapeHtml(name)}</span>`
       : `<span class="line">&nbsp;</span>`;
+    const positionRow = position !== undefined
+      ? `<div class="sig-line"><span class="ghost">${label}</span><span>ตำแหน่ง ${escapeHtml(position || '.......................................')}</span></div>`
+      : '';
     return `<div class="sig-block">
       <div class="sig-line"><span>${label}</span><span class="line">&nbsp;</span></div>
       <div class="sig-line"><span class="ghost">${label}</span><span>(</span>${parenInner}<span>)</span></div>
+      ${positionRow}
     </div>`;
   }
 
@@ -1055,10 +1060,7 @@
           </div>
           <div>
             ${finalSkip ? `
-            <h4>๒. ${memoCheck(true)} ไม่ส่งตรวจรายการกลุ่มเสี่ยง</h4>
-            <div class="memo-list">
-              <div class="memo-sub">${memoCheck(true)} อื่นๆ</div>
-            </div>` : `
+            <h4>๒. ${memoCheck(true)} ไม่ส่งตรวจรายการกลุ่มเสี่ยง</h4>` : `
             <h4>๒. ${memoCheck(true)} ส่งตรวจรายการกลุ่มเสี่ยง</h4>
             <div class="memo-list">
               ${labLines}
@@ -1069,8 +1071,7 @@
         <div class="memo-footer">
           <div class="memo-footer-left">
             <div class="block">
-              ${sigBlock('ผู้ส่งตรวจ', j.assessor)}
-              <div>ตำแหน่ง ${escapeHtml(j.assessorPosition || '.......................................')}</div>
+              ${sigBlock('ผู้ส่งตรวจ', j.assessor, j.assessorPosition)}
             </div>
             <div class="block">
               ${sigBlock('ผู้รับตรวจ', employeeFullName)}
@@ -1078,8 +1079,8 @@
           </div>
 
           <div class="memo-box">
-            <div class="box-title">กรณีส่งผลเอกสารผลตรวจสุขภาพ</div>
-            ${sigBlock('ผู้ส่งตรวจ', j.assessor)}
+            <div class="box-title">กรณีส่งเอกสารผลตรวจสุขภาพ</div>
+            ${sigBlock('ผู้ส่งตรวจ', j.assessor, j.assessorPosition)}
             <div class="box-note">ได้รับเอกสารผลการตรวจสุขภาพก่อนเข้าปฏิบัติงาน รับคืนเอกสารเรียบร้อยแล้ว</div>
             ${sigBlock('ผู้รับตรวจ', employeeFullName)}
           </div>
