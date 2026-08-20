@@ -82,9 +82,7 @@
     background:var(--paper-raise);border:1px solid var(--line);
     border-radius:var(--radius);box-shadow:var(--shadow);
     padding:26px 28px;margin-bottom:18px;
-    animation:rise .35s ease both;
   }
-  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
   .card h2{
     font-family:'Noto Serif Thai',serif;font-size:18px;color:var(--teal-deep);
     margin:0 0 4px;
@@ -148,7 +146,6 @@
   .followup{
     margin-top:12px;padding:12px 14px;border-radius:9px;
     background:var(--paper);border:1px solid var(--line);
-    animation:rise .25s ease both;
   }
 
   .extra-note{
@@ -273,12 +270,9 @@
   .memo-subject{margin:4px 0;}
   .memo-subject b{display:inline-block;width:70px;}
   .memo-body{margin:12px 0 16px;text-indent:2.2em;text-align:justify;}
-  .memo-cols{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;align-items:start;}
-  .memo-cols h4{margin:0 0 6px;font-weight:700;}
-  .memo-list{margin:0 0 14px;}
-  .memo-item{margin:2px 0;}
-  .memo-sub{margin:2px 0 2px 20px;}
-  .memo-subsub{margin:2px 0 2px 34px;}
+  .memo-page h4{margin:14px 0 6px;font-weight:700;}
+  .memo-list{margin:0 0 6px;}
+  .memo-sub{margin:4px 0 4px 20px;}
   .memo-check{font-family:'IBM Plex Mono',monospace;margin-right:5px;}
   .memo-sign-block{margin-top:26px;display:flex;justify-content:flex-end;}
   .memo-sign{text-align:center;width:230px;}
@@ -363,6 +357,7 @@
       employeeName:"", unit:"", title:"", duty:"",
       assessor:"", assessorPosition:"", contactPhone:"",
       startDate:"", date: todayISO(), memoNumber:"",
+      skipRiskExams: false,
     },
     answers: {
       patientContact: null,        // 'none' | 'occasional' | 'regular'
@@ -373,7 +368,7 @@
       driving: null,               // 'no' | 'yes'
       drivingPatientHelp: null,    // 'no' | 'yes'
       noise: [],                   // array (or ["ไม่มี"])
-      radiationOrChemo: null,      // 'yes' | 'no' — กรอกโดย HR เท่านั้น
+      radiationOrChemo: null,      // 'no' | 'yes' | 'exempt' — กรอกโดย HR เท่านั้น
     },
     results: null,
     loadedFromDb: false,
@@ -708,7 +703,11 @@
           <div class="qbody">
             <div class="qtitle">G. ตำแหน่งนี้เป็นงานสัมผัสรังสี หรืองานสารเคมีบำบัด หรือไม่?<span class="req">*</span></div>
             <div class="qcaption">ลักษณะงานกลุ่มนี้ต้องส่งตรวจ UPT (Urine Pregnancy Test) เพิ่มเติม — กรอกโดยเจ้าหน้าที่ HR</div>
-            ${radioGroup('radiationOrChemo', [{val:'no',label:'ไม่มี'},{val:'yes',label:'มี'}], a.radiationOrChemo)}
+            ${radioGroup('radiationOrChemo', [
+              {val:'no', label:'ไม่มี'},
+              {val:'yes', label:'มี'},
+              {val:'exempt', label:'มี แต่ทำหมันแล้ว หรือหมดประจำเดือนแล้ว (ไม่ต้องส่งตรวจ UPT)'},
+            ], a.radiationOrChemo)}
             <div class="qerror">กรุณาเลือกคำตอบ</div>
           </div>
         </div>
@@ -833,6 +832,10 @@
           <label for="f-memoNumber">เลขที่หนังสือ</label>
           <input type="text" id="f-memoNumber" placeholder="เช่น บค.พนง.๖๙/๐๐๑" value="${escapeHtml(state.job.memoNumber)}"/>
         </div>
+        <label class="opt ${state.job.skipRiskExams?'checked':''}" style="max-width:520px;">
+          <input type="checkbox" id="f-skipRiskExams" ${state.job.skipRiskExams?'checked':''}/>
+          <span>ไม่ส่งตรวจรายการกลุ่มเสี่ยง แม้คำตอบจะพบความเสี่ยง (เอกสารจะไม่พิมพ์รายละเอียดรายการความเสี่ยงใด ๆ)</span>
+        </label>
       </div>
 
       <div class="actions">
@@ -849,6 +852,10 @@
   function bindStep3(){
     document.getElementById('backStep2').addEventListener('click', ()=>{ state.step=2; renderAll(); });
     document.getElementById('f-memoNumber').addEventListener('input', (e)=>{ state.job.memoNumber = e.target.value; });
+    document.getElementById('f-skipRiskExams').addEventListener('change', (e)=>{
+      state.job.skipRiskExams = e.target.checked;
+      e.target.closest('.opt').classList.toggle('checked', e.target.checked);
+    });
     document.getElementById('printBtn').addEventListener('click', ()=>{
       document.getElementById('printMemo').innerHTML = buildMemoHtml();
       window.print();
@@ -859,6 +866,7 @@
         employeeName:"", unit:"", title:"", duty:"",
         assessor:"", assessorPosition:"", contactPhone:"",
         startDate:"", date: todayISO(), memoNumber:"",
+        skipRiskExams: false,
       };
       state.answers = {patientContact:null,bloodExposure:[],food:null,childcare:null,childcareDiaper:null,driving:null,drivingPatientHelp:null,noise:[],radiationOrChemo:null};
       state.results = null;
@@ -882,6 +890,23 @@
 
   /* ================= PRINT MEMO BUILDER ================= */
 
+  const DOMAIN_PRINT_LABEL = {
+    "1.1":"กลุ่มการสัมผัสผู้ป่วย — เสี่ยงสูง : สัมผัสโดยตรงใกล้ชิด (เช่น แพทย์, พยาบาล, เภสัชฯ, เทคนิคการแพทย์)",
+    "1.2":"กลุ่มการสัมผัสผู้ป่วย — เสี่ยงปานกลาง : ให้บริการทั่วไป (เช่น การเงิน, เวชระเบียน)",
+    "1.3":"กลุ่มการสัมผัสผู้ป่วย — ดูแลเด็กเล็ก (เช่น ผู้ดูแลเด็ก, พี่เลี้ยงเด็ก)",
+    "2":"กลุ่มสัมผัสเลือดหรือสารคัดหลั่ง (เช่น ห้องแล็บ, พยาธิวิทยา)",
+    "3":"กลุ่มทำงานด้านอาหารหรือสัมผัสอาหาร",
+    "5":"กลุ่มปฏิบัติงานขับขี่ยานพาหนะ",
+    "6":"กลุ่มเสี่ยงงานสัมผัสเสียงดัง",
+  };
+  const PRINT_EXAM_LABELS = {
+    "HBsAg, Anti-HBs":"ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)",
+    "Stool exam, Stool culture":"ตรวจอุจจาระ (Stool exam, Stool culture)",
+    "Anti-HAV IgM":"ตรวจไวรัสตับอักเสบเอ (Anti-HAV IgM)",
+    "ตรวจสายตาและตาบอดสี":"ตรวจสายตาและตาบอดสี",
+    "ตรวจการได้ยิน (Audiometry)":"ตรวจการได้ยิน (Audiometry)",
+  };
+
   function memoCheck(condition){
     return `<span class="memo-check">${condition ? '☑' : '☐'}</span>`;
   }
@@ -890,7 +915,18 @@
     const j = state.job;
     const r = state.results || computeResults();
     const has = code => !!r.domains.find(d=>d.code===code);
-    const noRisk = has('4') && r.domains.length === 1;
+    const noRiskDetected = has('4') && r.domains.length === 1;
+    const finalSkip = noRiskDetected || !!j.skipRiskExams;
+
+    const riskLines = r.domains
+      .filter(d => d.code !== '4' && DOMAIN_PRINT_LABEL[d.code])
+      .map(d=>{
+        const examNames = (DOMAIN_EXAMS[d.code]||[]).map(e => PRINT_EXAM_LABELS[e] || e).join('、 ');
+        return `<div class="memo-sub">${memoCheck(true)} ${DOMAIN_PRINT_LABEL[d.code]}<br><span style="margin-left:26px;color:#333;">→ ${examNames}</span></div>`;
+      });
+    if(j.radiationOrChemo === 'yes'){
+      riskLines.push(`<div class="memo-sub">${memoCheck(true)} งานสัมผัสรังสี หรืองานสารเคมีบำบัด<br><span style="margin-left:26px;color:#333;">→ UPT (Urine Pregnancy Test)</span></div>`);
+    }
 
     return `
       <div class="memo-page">
@@ -914,50 +950,19 @@
           โดยรายชื่อข้างต้นจะเป็นผู้รับผิดชอบค่าใช้จ่ายที่เกิดขึ้นเองทั้งหมด โรงพยาบาลจุฬาภรณ์กำหนดรายการตรวจ ดังนี้
         </div>
 
-        <div class="memo-cols">
-          <div>
-            <h4>๑. ${memoCheck(true)} ตรวจรายการพื้นฐาน</h4>
-            <div class="memo-list">
-              <div class="memo-sub">${memoCheck(true)} ตรวจร่างกายทั่วไป (Physical Exam)</div>
-              <div class="memo-sub">${memoCheck(true)} ตรวจน้ำตาลในเลือด (FBS)</div>
-              <div class="memo-sub">${memoCheck(true)} ความสมบูรณ์เม็ดเลือด (CBC)</div>
-              <div class="memo-sub">${memoCheck(true)} การทำงานของไต (Cr)</div>
-              <div class="memo-sub">${memoCheck(true)} การทำงานของตับ (ALT)</div>
-              <div class="memo-sub">${memoCheck(true)} ตรวจปัสสาวะ (UA)</div>
-              <div class="memo-sub">${memoCheck(true)} เอกซเรย์ปอด (CXR)</div>
-            </div>
+        <h4>๑. ${memoCheck(true)} ตรวจรายการพื้นฐาน</h4>
+        <div class="memo-list">
+          <div class="memo-sub">${memoCheck(true)} ตรวจร่างกายทั่วไป (Physical Exam), ตรวจน้ำตาลในเลือด (FBS), ความสมบูรณ์เม็ดเลือด (CBC), การทำงานของไต (Cr), การทำงานของตับ (ALT), ตรวจปัสสาวะ (UA), เอกซเรย์ปอด (CXR)</div>
+        </div>
 
-            <h4>๒. ${memoCheck(noRisk)} ไม่ส่งตรวจรายการกลุ่มเสี่ยง</h4>
-            <div class="memo-list">
-              <div class="memo-sub">${memoCheck(noRisk)} อื่นๆ</div>
-            </div>
-          </div>
+        <h4>๒. ${memoCheck(!finalSkip)} ส่งตรวจรายการกลุ่มเสี่ยง</h4>
+        <div class="memo-list">
+          ${finalSkip ? '' : riskLines.join('')}
+        </div>
 
-          <div>
-            <h4>๓. ${memoCheck(!noRisk)} ส่งตรวจรายการกลุ่มเสี่ยง</h4>
-            <div class="memo-list">
-              <div class="memo-item">๓.๑ กลุ่มการสัมผัสผู้ป่วย (เลือกได้ ๑ ข้อ หากมี)</div>
-              <div class="memo-sub">(๑) ${memoCheck(has('1.1'))} เสี่ยงสูง : สัมผัสโดยตรงใกล้ชิด (เช่น แพทย์, พยาบาล, เภสัชฯ, เทคนิคการแพทย์)</div>
-              <div class="memo-subsub">${memoCheck(has('1.1'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
-              <div class="memo-sub">(๒) ${memoCheck(has('1.2'))} เสี่ยงปานกลาง : ให้บริการทั่วไป (เช่น การเงิน, เวชระเบียน)</div>
-              <div class="memo-subsub">${memoCheck(has('1.2'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
-              <div class="memo-sub">(๓) ${memoCheck(has('1.3'))} ดูแลเด็กเล็ก (เช่น ผู้ดูแลเด็ก, พี่เลี้ยงเด็ก)</div>
-              <div class="memo-subsub">${memoCheck(has('1.3'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
-
-              <div class="memo-item">๓.๒ ความเสี่ยงด้านอื่นๆ</div>
-              <div class="memo-sub">(๑) กลุ่ม : สัมผัสเลือดหรือสารคัดหลั่ง (เช่น ห้องแล็บ, พยาธิวิทยา)</div>
-              <div class="memo-subsub">${memoCheck(has('2'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
-              <div class="memo-sub">(๒) กลุ่ม : ทำงานด้านอาหารหรือสัมผัสอาหาร</div>
-              <div class="memo-subsub">${memoCheck(has('3'))} ตรวจไวรัสตับอักเสบบี (HBsAg, Anti-HBs)</div>
-              <div class="memo-subsub">${memoCheck(has('3'))} ตรวจอุจจาระ (Stool exam, Stool culture)</div>
-              <div class="memo-subsub">${memoCheck(has('3'))} ตรวจไวรัสตับอักเสบเอ (Anti-HAV IgM)</div>
-              <div class="memo-sub">(๓) กลุ่ม : ปฏิบัติงานขับขี่ยานพาหนะ</div>
-              <div class="memo-subsub">${memoCheck(has('5'))} ตรวจสายตาและตาบอดสี</div>
-              <div class="memo-sub">(๔) กลุ่มเสี่ยง : งานสัมผัสเสียงดัง</div>
-              <div class="memo-subsub">${memoCheck(has('6'))} ตรวจการได้ยิน (Audiometry)</div>
-              <div class="memo-sub">${memoCheck(r.exams.includes(UPT_EXAM))} UPT (Urine Pregnancy Test) — งานสัมผัสรังสี/สารเคมีบำบัด</div>
-            </div>
-          </div>
+        <h4>๓. ${memoCheck(finalSkip)} ไม่ส่งตรวจรายการกลุ่มเสี่ยง</h4>
+        <div class="memo-list">
+          <div class="memo-sub">${memoCheck(finalSkip)} อื่นๆ</div>
         </div>
 
         <div class="memo-sign-block">
