@@ -935,11 +935,11 @@
 
   /* ================= PRINT MEMO BUILDER ================= */
 
-  const DOMAIN_PRINT_LABEL = {
-    "1.1":"เสี่ยงสูง : สัมผัสผู้ป่วยโดยตรงใกล้ชิด (เช่น แพทย์, พยาบาล, เภสัชฯ, เทคนิคการแพทย์)",
-    "1.2":"เสี่ยงปานกลาง : ให้บริการผู้ป่วยทั่วไป (เช่น การเงิน, เวชระเบียน)",
-    "1.3":"ดูแลเด็กเล็ก (เช่น ผู้ดูแลเด็ก, พี่เลี้ยงเด็ก)",
-    "2":"สัมผัสเลือดหรือสารคัดหลั่ง (เช่น ห้องแล็บ, พยาธิวิทยา)",
+  const DOMAIN_SUMMARY_LABEL = {
+    "1.1":"เสี่ยงสูง : สัมผัสผู้ป่วยโดยตรงใกล้ชิด",
+    "1.2":"เสี่ยงปานกลาง : ให้บริการผู้ป่วยทั่วไป",
+    "1.3":"ดูแลเด็กเล็ก",
+    "2":"สัมผัสเลือดหรือสารคัดหลั่ง",
     "3":"ทำงานด้านอาหารหรือสัมผัสอาหาร",
     "5":"ปฏิบัติงานขับขี่ยานพาหนะ",
     "6":"งานสัมผัสเสียงดัง",
@@ -972,15 +972,17 @@
     const noRiskDetected = has('4') && r.domains.length === 1;
     const finalSkip = noRiskDetected || !!j.skipRiskExams;
 
-    const riskLines = r.domains
-      .filter(d => d.code !== '4' && DOMAIN_PRINT_LABEL[d.code])
-      .map(d=>{
-        const examNames = (DOMAIN_EXAMS[d.code]||[]).map(e => PRINT_EXAM_LABELS[e] || e).join(', ');
-        return `<div class="memo-sub">${memoCheck(true)} ${DOMAIN_PRINT_LABEL[d.code]} — ${examNames}</div>`;
-      });
+    const riskSummaryLines = r.domains
+      .filter(d => d.code !== '4' && DOMAIN_SUMMARY_LABEL[d.code])
+      .map(d => `<div class="memo-sub">${memoCheck(true)} ${DOMAIN_SUMMARY_LABEL[d.code]}</div>`);
     if(j.radiationOrChemo === 'yes'){
-      riskLines.push(`<div class="memo-sub">${memoCheck(true)} งานสัมผัสรังสี หรืองานสารเคมีบำบัด — UPT (Urine Pregnancy Test)</div>`);
+      riskSummaryLines.push(`<div class="memo-sub">${memoCheck(true)} งานสัมผัสรังสี หรืองานสารเคมีบำบัด</div>`);
     }
+
+    const labSet = new Set();
+    r.domains.forEach(d => (DOMAIN_EXAMS[d.code]||[]).forEach(e => labSet.add(PRINT_EXAM_LABELS[e] || e)));
+    if(j.radiationOrChemo === 'yes') labSet.add('UPT (Urine Pregnancy Test)');
+    const labLines = Array.from(labSet).map(name => `<div class="memo-sub">${memoCheck(true)} ${name}</div>`).join('');
 
     const baseLines = BASE_EXAM_PRINT_LABELS.map(name =>
       `<div class="memo-sub">${memoCheck(true)} ${name}</div>`
@@ -1018,9 +1020,14 @@
         <div class="memo-list">
           <div class="memo-sub">${memoCheck(true)} อื่นๆ</div>
         </div>` : `
-        <h4>๒. ${memoCheck(true)} ส่งตรวจรายการกลุ่มเสี่ยง</h4>
+        <h4>๒. สรุปกลุ่มความเสี่ยงของผู้ปฏิบัติงาน</h4>
         <div class="memo-list">
-          ${riskLines.join('')}
+          ${riskSummaryLines.join('')}
+        </div>
+
+        <h4>๓. ${memoCheck(true)} ส่งตรวจรายการกลุ่มเสี่ยง</h4>
+        <div class="memo-list">
+          ${labLines}
         </div>`}
 
         <div class="memo-spacer"></div>
