@@ -257,7 +257,6 @@
   .memo-page{
     font-family:'IBM Plex Sans Thai','Sarabun',sans-serif;color:#000;
     font-size:14.5px;line-height:1.62;width:100%;margin:0;padding:0;
-    min-height:265mm; display:flex; flex-direction:column;
   }
   .memo-head{display:flex;align-items:center;gap:14px;min-height:74px;margin-bottom:6px;}
   .memo-seal{
@@ -277,13 +276,15 @@
   .memo-list{margin:0 0 4px;}
   .memo-sub{margin:4px 0 4px 18px;}
   .memo-check{font-family:'IBM Plex Mono',monospace;margin-right:5px;}
-  .memo-spacer{flex:1 1 auto;min-height:16px;}
-  .memo-sign-block{margin-top:0;display:flex;justify-content:flex-end;}
+  .memo-sign-block{margin-top:22px;display:flex;justify-content:flex-end;}
   .memo-sign{text-align:center;width:230px;}
   .memo-sign .line{margin-bottom:6px;}
-  .memo-recipient{margin-top:30px;}
-  .memo-recipient .line{width:340px;border-bottom:1px dotted #000;margin-bottom:6px;}
-  .memo-note{margin-top:24px;font-size:13px;line-height:1.6;color:#333;border-top:1px solid #000;padding-top:8px;}
+  .memo-recipient{margin-top:26px;}
+  .memo-recipient .line{border-bottom:1px dotted #000;margin-bottom:6px;display:inline-block;}
+  .memo-recipient .line.sig{width:160px;}
+  .memo-recipient .name-row{display:flex;align-items:flex-end;gap:2px;}
+  .memo-recipient .name-row .line{width:340px;margin-bottom:6px;}
+  .memo-note{margin-top:22px;font-size:13px;line-height:1.6;color:#333;border-top:1px solid #000;padding-top:8px;}
   .memo-note div{margin:2px 0;}
   @media print{
     @page{ size:A4; margin:12mm 15mm; }
@@ -902,6 +903,7 @@
     });
     document.getElementById('printBtn').addEventListener('click', ()=>{
       document.getElementById('printMemo').innerHTML = buildMemoHtml();
+      fitMemoToOnePage();
       const originalTitle = document.title;
       document.title = ' ';
       window.print();
@@ -956,6 +958,28 @@
 
   function memoCheck(condition){
     return `<span class="memo-check">${condition ? '☑' : '☐'}</span>`;
+  }
+
+  // วัดความสูงจริงของเอกสาร แล้วย่อขนาด (zoom) เท่าที่จำเป็นให้พอดี 1 หน้า A4 เสมอ
+  // สำคัญ: ต้องวัดที่ความสูงตามเนื้อหาจริง (ไม่มี min-height บังคับ) มิฉะนั้นค่าที่วัดได้จะผิดเพี้ยน
+  function fitMemoToOnePage(){
+    const container = document.getElementById('printMemo');
+    const page = container.querySelector('.memo-page');
+    if(!page) return;
+    page.style.zoom = 1;
+    const prevStyle = container.getAttribute('style');
+    // แสดงผลชั่วคราวนอกจอเพื่อวัดความสูงจริง (ปกติซ่อนด้วย display:none)
+    container.setAttribute('style', 'display:block !important; position:fixed; left:-9999px; top:0; width:180mm;');
+    const pxPerMm = 96 / 25.4;
+    const PAGE_H_MM = 297, MARGIN_MM = 12; // ต้องตรงกับ @page ด้านบน
+    const availablePx = (PAGE_H_MM - MARGIN_MM * 2) * pxPerMm - 8; // เผื่อ buffer เล็กน้อย
+    const naturalHeight = page.scrollHeight;
+    let zoom = 1;
+    if(naturalHeight > availablePx){
+      zoom = Math.max(0.72, availablePx / naturalHeight);
+    }
+    page.style.zoom = zoom;
+    if(prevStyle === null) container.removeAttribute('style'); else container.setAttribute('style', prevStyle);
   }
 
   function buildMemoHtml(){
@@ -1016,8 +1040,6 @@
           </div>
         </div>
 
-        <div class="memo-spacer"></div>
-
         <div class="memo-sign-block">
           <div class="memo-sign">
             <div class="line">ผู้ส่งตรวจ ${escapeHtml(j.assessor || '')}</div>
@@ -1028,8 +1050,8 @@
 
         <div class="memo-recipient">
           <div>ผู้รับตรวจ</div>
-          <div class="line">&nbsp;</div>
-          <div>(.......................................)</div>
+          <div class="line sig">&nbsp;</div>
+          <div class="name-row">(<span class="line">&nbsp;</span>)</div>
         </div>
 
         <div class="memo-note">
