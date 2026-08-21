@@ -173,6 +173,8 @@
     font-size:14px;transition:all .15s ease;background:#fff;
   }
   .opt:hover{border-color:var(--teal);}
+  .opt.disabled{opacity:.45;cursor:not-allowed;background:var(--paper);}
+  .opt.disabled:hover{border-color:var(--line);}
   .opt input{accent-color:var(--teal);width:16px;height:16px;flex:none;}
   .opt.checked{border-color:var(--teal);background:var(--teal-tint);font-weight:500;}
   .opts.wrap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -691,8 +693,8 @@
 
   function radioGroup(name, options, current){
     return `<div class="opts">${options.map(o=>`
-      <label class="opt ${current===o.val?'checked':''}">
-        <input type="radio" name="${name}" value="${o.val}" ${current===o.val?'checked':''}/>
+      <label class="opt ${current===o.val?'checked':''} ${o.disabled?'disabled':''}">
+        <input type="radio" name="${name}" value="${o.val}" ${current===o.val?'checked':''} ${o.disabled?'disabled':''}/>
         <span>${o.label}</span>
       </label>`).join('')}</div>`;
   }
@@ -708,6 +710,10 @@
 
   function step2Html(){
     const a = state.answers;
+    const isMale = state.job.titlePrefix === 'นาย';
+    if(isMale){
+      a.radiationOrChemo = 'no';
+    }
     return `
       <div class="card">
         <h2>คำถามคัดกรองความเสี่ยง</h2>
@@ -792,10 +798,11 @@
             <div class="qtitle">G. ตำแหน่งนี้เป็นงานสัมผัสรังสี หรืองานสารเคมีบำบัด หรือไม่?<span class="req">*</span></div>
             <div class="qcaption">ลักษณะงานกลุ่มนี้ต้องส่งตรวจ UPT (Urine Pregnancy Test) เพิ่มเติม — กรอกโดยเจ้าหน้าที่ HR</div>
             ${radioGroup('radiationOrChemo', [
-              {val:'no', label:'ไม่มี'},
-              {val:'yes', label:'มี'},
-              {val:'exempt', label:'มี แต่ทำหมันแล้ว หรือหมดประจำเดือนแล้ว (ไม่ต้องส่งตรวจ UPT)'},
+              {val:'no', label:'ไม่มี', disabled:isMale},
+              {val:'yes', label:'มี', disabled:isMale},
+              {val:'exempt', label:'มี แต่ทำหมันแล้ว หรือหมดประจำเดือนแล้ว (ไม่ต้องส่งตรวจ UPT)', disabled:isMale},
             ], a.radiationOrChemo)}
+            ${isMale ? '<div class="extra-note">ปิดคำถามข้อนี้เนื่องจากเลือกคำนำหน้า "นาย" ไว้ในหน้าแรก — เพศชายไม่จำเป็นต้องส่งตรวจ UPT ไม่ว่าจะมีความเสี่ยงสัมผัสรังสีหรือไม่ก็ตาม ระบบจึงล็อกคำตอบเป็น "ไม่มี" ให้อัตโนมัติ</div>' : ''}
             <div class="qerror">กรุณาเลือกคำตอบ</div>
           </div>
         </div>
@@ -945,8 +952,9 @@
       state.job.skipRiskExams = e.target.checked;
       e.target.closest('.opt').classList.toggle('checked', e.target.checked);
     });
-    document.getElementById('printBtn').addEventListener('click', ()=>{
+    document.getElementById('printBtn').addEventListener('click', async ()=>{
       document.getElementById('printMemo').innerHTML = buildMemoHtml();
+      await waitForMemoImages();
       fitMemoToOnePage();
       const originalTitle = document.title;
       document.title = ' ';
@@ -1023,6 +1031,24 @@
     </div>`;
   }
 
+  // รอให้รูปภาพ (โลโก้) โหลด/ถอดรหัสเสร็จก่อนพิมพ์ทุกครั้ง — ป้องกันโลโก้หายเป็นบางครั้ง
+  // เพราะ <img> ถูกสร้างใหม่ทุกครั้งที่กดพิมพ์ และการถอดรหัสภาพเป็น asynchronous
+  // แม้จะเป็น data URI ที่ฝังไว้ในไฟล์แล้วก็ตาม
+  async function waitForMemoImages(){
+    const imgs = Array.from(document.querySelectorAll('#printMemo img'));
+    await Promise.all(imgs.map(img => {
+      if(img.complete && img.naturalWidth > 0){
+        return img.decode ? img.decode().catch(()=>{}) : Promise.resolve();
+      }
+      return new Promise(resolve => {
+        img.addEventListener('load', ()=> {
+          (img.decode ? img.decode().catch(()=>{}) : Promise.resolve()).then(resolve);
+        }, { once:true });
+        img.addEventListener('error', resolve, { once:true });
+      });
+    }));
+  }
+
   // วัดความสูงจริงของเอกสาร แล้วย่อขนาด (zoom) เท่าที่จำเป็นให้พอดี 1 หน้า A4 เสมอ
   // สำคัญ: ต้องวัดที่ความสูงตามเนื้อหาจริง (ไม่มี min-height บังคับ) มิฉะนั้นค่าที่วัดได้จะผิดเพี้ยน
   function fitMemoToOnePage(){
@@ -1049,7 +1075,8 @@
     const j = state.job;
     const r = state.results || computeResults();
     const has = code => !!r.domains.find(d=>d.code===code);
-    const noRiskDetected = has('4') && r.domains.length === 1;
+    const needsUPT = r.exams.includes(UPT_EXAM);
+    const noRiskDetected = has('4') && r.domains.length === 1 && !needsUPT;
     const finalSkip = noRiskDetected || !!j.skipRiskExams;
 
     const labSet = new Set();
