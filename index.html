@@ -314,6 +314,8 @@
   .sig-line{display:flex;align-items:flex-end;gap:4px;margin-bottom:5px;}
   .sig-line .ghost{visibility:hidden;flex:none;}
   .sig-line .line{border-bottom:1px dotted #000;flex:1 1 auto;min-width:16px;}
+  .sig-line .ctr{flex:1 1 auto;min-width:16px;text-align:center;}
+  .sig-line .esig{flex:1 1 auto;min-width:16px;text-align:center;font-style:italic;font-weight:600;line-height:1.1;}
   .memo-box{border:1px solid #000;padding:12px 16px;}
   .memo-box .box-title{font-weight:700;text-decoration:underline;margin:0 0 6px;}
   .memo-box .box-note{margin:8px 0;}
@@ -619,23 +621,24 @@
         <div class="grid2">
           <div class="field">
             <label for="f-assessor">ผู้ส่งตรวจ</label>
-            <input type="text" id="f-assessor" placeholder="ชื่อ-นามสกุลเจ้าหน้าที่ผู้ส่งตรวจ (ใช้เป็นผู้ประสานงานด้วย)" value="${escapeHtml(state.job.assessor)}"/>
+            <input type="text" id="f-assessor" list="dl-assessor" autocomplete="off" placeholder="ชื่อ-นามสกุลเจ้าหน้าที่ผู้ส่งตรวจ (ใช้เป็นผู้ประสานงานด้วย)" value="${escapeHtml(state.job.assessor)}"/>
           </div>
           <div class="field">
             <label for="f-assessorPosition">ตำแหน่งผู้ส่งตรวจ</label>
-            <input type="text" id="f-assessorPosition" placeholder="เช่น เจ้าหน้าที่บริหารงานทั่วไป" value="${escapeHtml(state.job.assessorPosition)}"/>
+            <input type="text" id="f-assessorPosition" list="dl-position" autocomplete="off" placeholder="เช่น เจ้าหน้าที่บริหารงานทั่วไป" value="${escapeHtml(state.job.assessorPosition)}"/>
           </div>
         </div>
         <div class="grid2">
           <div class="field">
             <label for="f-contactPhone">เบอร์ติดต่อผู้ส่งตรวจ</label>
-            <input type="text" id="f-contactPhone" placeholder="เช่น 02 576 6000 ต่อ 6724" value="${escapeHtml(state.job.contactPhone)}"/>
+            <input type="text" id="f-contactPhone" list="dl-phone" autocomplete="off" placeholder="เช่น 02 576 6000 ต่อ 6724" value="${escapeHtml(state.job.contactPhone)}"/>
           </div>
           <div class="field">
             <label for="f-date">วันที่ประเมิน / วันที่ออกหนังสือ</label>
             <input type="date" id="f-date" value="${state.job.date}"/>
           </div>
         </div>
+        ${senderDatalists()}
         <div class="actions">
           <span></span>
           <button class="btn btn-primary" id="toStep2">ถัดไป: คัดกรองความเสี่ยง →</button>
@@ -644,12 +647,47 @@
     `;
   }
 
+  /* ===== จำชื่อ/ตำแหน่ง/เบอร์ผู้ส่งตรวจ (เก็บในเบราว์เซอร์เครื่องนี้ ไม่ส่งออกที่ใด) ===== */
+  const SENDER_MEM_KEY = 'hr_sender_memory_v1';
+  function loadSenders(){
+    try{ const v = JSON.parse(localStorage.getItem(SENDER_MEM_KEY)||'[]'); return Array.isArray(v)?v:[]; }catch(e){ return []; }
+  }
+  function rememberSender(){
+    const j = state.job;
+    const name = (j.assessor||'').trim();
+    if(!name) return;
+    const rec = {name, position:(j.assessorPosition||'').trim(), phone:(j.contactPhone||'').trim()};
+    try{
+      const list = loadSenders().filter(r=>r.name!==name);
+      list.unshift(rec);
+      localStorage.setItem(SENDER_MEM_KEY, JSON.stringify(list.slice(0,20)));
+    }catch(e){}
+  }
+  function senderDatalists(){
+    const list = loadSenders();
+    const uniq = k => [...new Set(list.map(r=>r[k]).filter(Boolean))];
+    const opts = arr => arr.map(v=>`<option value="${escapeHtml(v)}"></option>`).join('');
+    return `<datalist id="dl-assessor">${opts(uniq('name'))}</datalist>
+      <datalist id="dl-position">${opts(uniq('position'))}</datalist>
+      <datalist id="dl-phone">${opts(uniq('phone'))}</datalist>`;
+  }
+
   function bindStep1(){
     ['titlePrefix','employeeName','unit','title','duty','assessor','assessorPosition','contactPhone','originUnit','startDate','date'].forEach(key=>{
       const el = document.getElementById('f-'+key);
       el.addEventListener('input', ()=>{ state.job[key] = el.value; if(key==='title') checkMatch(el.value); });
     });
+    // เลือกชื่อผู้ส่งตรวจที่เคยบันทึกไว้ → เติมตำแหน่งและเบอร์ให้อัตโนมัติ (เฉพาะช่องที่ยังว่าง)
+    document.getElementById('f-assessor').addEventListener('change', e=>{
+      const rec = loadSenders().find(r=>r.name===e.target.value.trim());
+      if(!rec) return;
+      [['assessorPosition','position'],['contactPhone','phone']].forEach(([k,f])=>{
+        const el = document.getElementById('f-'+k);
+        if(el && !el.value.trim() && rec[f]){ el.value = rec[f]; state.job[k] = rec[f]; }
+      });
+    });
     document.getElementById('toStep2').addEventListener('click', ()=>{
+      rememberSender();
       state.step = 2; renderAll();
     });
   }
@@ -699,11 +737,11 @@
       </label>`).join('')}</div>`;
   }
 
-  function checkGroup(name, options, current, noneLabel){
+  function checkGroup(name, options, current, noneLabel, locked){
     const all = noneLabel ? [...options, noneLabel] : options;
     return `<div class="opts wrap-grid">${all.map(o=>`
-      <label class="opt ${current.includes(o)?'checked':''} ${o===noneLabel?'none-opt':''}">
-        <input type="checkbox" name="${name}" value="${o}" data-none="${o===noneLabel}" ${current.includes(o)?'checked':''}/>
+      <label class="opt ${current.includes(o)?'checked':''} ${o===noneLabel?'none-opt':''} ${locked?'disabled':''}">
+        <input type="checkbox" name="${name}" value="${o}" data-none="${o===noneLabel}" ${current.includes(o)?'checked':''} ${locked?'disabled':''}/>
         <span>${o}</span>
       </label>`).join('')}</div>`;
   }
@@ -714,6 +752,7 @@
     if(isMale){
       a.radiationOrChemo = 'no';
     }
+    if(HEARING_LOCKED) a.noise = [];
     return `
       <div class="card">
         <h2>คำถามคัดกรองความเสี่ยง</h2>
@@ -786,7 +825,8 @@
           <div class="qbody">
             <div class="qtitle">F. ตำแหน่งนี้ต้องทำงานใกล้เครื่องจักรหรืออุปกรณ์ที่มีเสียงดังเป็นประจำหรือไม่?<span class="req">*</span></div>
             <div class="qcaption">เลือกได้มากกว่า 1 ข้อ หรือเลือก "ไม่มี" หากไม่เข้าข่ายข้อใดเลย</div>
-            ${checkGroup('noise', NOISE_OPTIONS, a.noise, "ไม่มี")}
+            ${checkGroup('noise', NOISE_OPTIONS, a.noise, "ไม่มี", HEARING_LOCKED)}
+            ${HEARING_LOCKED ? '<div class="extra-note">ปิดคำถามข้อนี้ชั่วคราว — ยังไม่เปิดให้คัดกรองการได้ยิน (ไม่ต้องเลือกคำตอบ และไม่นับเป็นข้อบังคับ)</div>' : ''}
             <div class="qerror">กรุณาเลือกอย่างน้อย 1 ข้อ (หรือเลือก "ไม่มี")</div>
             ${a.noise.length > 0 && !a.noise.includes("ไม่มี") ? `<div class="extra-note">ฝ่ายอาชีวอนามัยควรตรวจสอบระดับเสียงในพื้นที่ปฏิบัติงานเพื่อยืนยันความเสี่ยง — ระบบไม่สามารถระบุระดับ dBA จากคำตอบนี้ได้โดยตรง</div>` : ''}
           </div>
@@ -815,7 +855,9 @@
     `;
   }
 
-  const REQUIRED_QUESTIONS = ['patientContact','bloodExposure','food','childcare','driving','noise','radiationOrChemo'];
+  // ปิดคำถามข้อ F (คัดกรองการได้ยิน) ชั่วคราว — เปลี่ยนเป็น false เพื่อเปิดใช้งานอีกครั้ง
+  const HEARING_LOCKED = true;
+  const REQUIRED_QUESTIONS = ['patientContact','bloodExposure','food','childcare','driving',...(HEARING_LOCKED?[]:['noise']),'radiationOrChemo'];
 
   function validateStep2(){
     const a = state.answers;
@@ -953,6 +995,7 @@
       e.target.closest('.opt').classList.toggle('checked', e.target.checked);
     });
     document.getElementById('printBtn').addEventListener('click', async ()=>{
+      rememberSender();
       document.getElementById('printMemo').innerHTML = buildMemoHtml();
       await waitForMemoImages();
       fitMemoToOnePage();
@@ -1017,16 +1060,30 @@
   // บรรทัดเซ็นชื่อ: บรรทัดแรกเว้นว่างไว้ให้เซ็นด้วยปากกาเท่านั้น
   // บรรทัดสองแสดงชื่อที่พิมพ์ไว้ในวงเล็บ (ถ้ามี) — ใช้ซ้ำทั้ง ผู้ส่งตรวจ/ผู้รับตรวจ ทั้งฝั่งซ้ายและในกรอบ
   // position (ถ้ามี) จะแสดงบรรทัดที่ 3 โดยเยื้องให้ตรงกับจุดเริ่มวงเล็บ
-  function sigBlock(label, name, position){
-    const parenInner = name
-      ? `<span>${escapeHtml(name)}</span>`
-      : `<span class="line">&nbsp;</span>`;
+  // ตัดคำนำหน้าชื่อ (นาย/นาง/นางสาว/น.ส./ดร./นพ./พญ. ฯลฯ) ออกจากชื่อผู้ส่งตรวจ สำหรับลายเซ็นอิเล็กทรอนิกส์
+  function stripTitle(n){
+    return String(n||'').trim()
+      .replace(/^(นางสาว|น\.ส\.|นาง|นาย|ว่าที่\s*ร\.ต\.|ศ\.|รศ\.|ผศ\.|ดร\.|นพ\.|พญ\.|ทพ\.|ทญ\.|ภก\.|ภญ\.|คุณ)\s*/,'')
+      .trim();
+  }
+
+  // บรรทัดเซ็นชื่อ: esign=true จะแสดงชื่อ-นามสกุล (ไม่มีคำนำหน้า) เป็นลายเซ็นอิเล็กทรอนิกส์ ไม่ต้องเซ็นด้วยลายมือ
+  // ถ้าไม่ใช่ esign (ผู้รับตรวจ) เว้นเส้นประไว้ให้เซ็นด้วยปากกา
+  // บรรทัดสองแสดงชื่อที่พิมพ์ไว้ในวงเล็บ (ถ้ามี); position (ถ้ามี) แสดงบรรทัดที่ 3
+  function sigBlock(label, name, position, esign){
+    const parenRow = name
+      ? `<span class="ctr">( ${escapeHtml(name)} )</span>`
+      : `<span>(</span><span class="line">&nbsp;</span><span>)</span>`;
     const positionRow = position !== undefined
-      ? `<div class="sig-line"><span class="ghost">${label}</span><span>ตำแหน่ง ${escapeHtml(position || '.......................................')}</span></div>`
+      ? `<div class="sig-line"><span class="ghost">${label}</span><span class="ctr">ตำแหน่ง ${escapeHtml(position || '.......................................')}</span></div>`
       : '';
+    const esigName = esign ? stripTitle(name) : '';
+    const firstRow = esigName
+      ? `<div class="sig-line"><span>${label}</span><span class="esig">${escapeHtml(esigName)}</span></div>`
+      : `<div class="sig-line"><span>${label}</span><span class="line">&nbsp;</span></div>`;
     return `<div class="sig-block">
-      <div class="sig-line"><span>${label}</span><span class="line">&nbsp;</span></div>
-      <div class="sig-line"><span class="ghost">${label}</span><span>(</span>${parenInner}<span>)</span></div>
+      ${firstRow}
+      <div class="sig-line"><span class="ghost">${label}</span>${parenRow}</div>
       ${positionRow}
     </div>`;
   }
@@ -1133,7 +1190,7 @@
         <div class="memo-footer">
           <div class="memo-footer-left">
             <div class="block">
-              ${sigBlock('ผู้ส่งตรวจ', j.assessor, j.assessorPosition)}
+              ${sigBlock('ผู้ส่งตรวจ', j.assessor, j.assessorPosition, true)}
             </div>
             <div class="block">
               ${sigBlock('ผู้รับตรวจ', employeeFullName)}
